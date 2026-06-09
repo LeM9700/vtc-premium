@@ -247,6 +247,7 @@ export default function SceneContact() {
 
     setMessages(newHistory)
     setInput('')
+    resetInactivityTimer()
     setLoading(true)
 
     const newCount = messageCount + 1
@@ -274,7 +275,7 @@ export default function SceneContact() {
       setLoading(false)
       inputRef.current?.focus()
     }
-  }, [input, loading, messages, phase, callClaude, processDevis, messageCount])
+  }, [input, loading, messages, phase, callClaude, processDevis, messageCount, resetInactivityTimer])
 
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
