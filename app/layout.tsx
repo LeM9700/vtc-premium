@@ -3,6 +3,7 @@ import { Cormorant_Garamond, DM_Sans } from 'next/font/google'
 import SmoothScroller from '@/components/layout/SmoothScroller'
 import CustomCursor   from '@/components/ui/CustomCursor'
 import LoadingScreen  from '@/components/ui/LoadingScreen'
+import JsonLd from '@/components/seo/JsonLd'
 import '@/app/globals.css'
 
 const cormorant = Cormorant_Garamond({
@@ -67,6 +68,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="fr" className={`${cormorant.variable} ${dmSans.variable}`}>
       <body className="bg-[#0A0A0A] text-[#F5F0E8] overflow-x-hidden">
+        <JsonLd />
         <LoadingScreen />
         <SmoothScroller>
           <CustomCursor />
