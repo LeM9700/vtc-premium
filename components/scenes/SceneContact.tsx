@@ -94,11 +94,14 @@ export default function SceneContact() {
   const resetInactivityTimer = useCallback(() => {
     if (timeoutRef.current) clearTimeout(timeoutRef.current)
     timeoutRef.current = setTimeout(() => {
-      setPhase(prev => prev !== 'chat' ? prev : 'expired')
-      setMessages(prev => [...prev, {
-        role:    'assistant' as const,
-        content: "Votre session a expiré après 7 minutes d'inactivité. Rechargez la page pour démarrer une nouvelle conversation.",
-      }])
+      setPhase(prev => {
+        if (prev !== 'chat') return prev
+        setMessages(m => [...m, {
+          role:    'assistant' as const,
+          content: "Votre session a expiré après 7 minutes d'inactivité. Rechargez la page pour démarrer une nouvelle conversation.",
+        }])
+        return 'expired'
+      })
     }, INACTIVITY_MS)
   }, [])
 
@@ -260,11 +263,14 @@ export default function SceneContact() {
 
       const assistantMsg: Message = { role: 'assistant', content: rawReply }
       setMessages(prev => [...prev, assistantMsg])
-      if (newCount >= 20) setPhase('limit')
 
       // Vérifie si toutes les données sont collectées
       const data = extractCollected(reply)
-      if (data) await processDevis(data)
+      if (data) {
+        await processDevis(data)
+      } else if (newCount >= 20) {
+        setPhase('limit')
+      }
 
     } catch {
       setMessages(prev => [...prev, {

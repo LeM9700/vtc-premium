@@ -6,10 +6,10 @@ const client = new Anthropic()
 const MAX_MESSAGES = 20
 
 const OFF_TOPIC_PATTERNS = [
-  /météo|temps qu.il fait|température extérieure/i,
+  /météo|temps qu'il fait|température extérieure/i,
   /recette|cuisine|gastronomie/i,
   /politique|élection|gouvernement/i,
-  /blague|humour|raconte.moi/i,
+  /blague|humour|raconte-moi/i,
   /\bcode\b|programme|javascript|python|typescript|développe/i,
   /actualité|journal|news|info du jour/i,
   /sport|football|match|ligue/i,
@@ -31,7 +31,8 @@ export async function POST(req: NextRequest) {
 
     const lastUserMsg = [...messages].reverse().find((m: { role: string }) => m.role === 'user')
     if (lastUserMsg) {
-      const isOffTopic = OFF_TOPIC_PATTERNS.some(p => p.test(lastUserMsg.content))
+      const isOffTopic = typeof lastUserMsg.content === 'string' &&
+        OFF_TOPIC_PATTERNS.some(p => p.test(lastUserMsg.content))
       if (isOffTopic) {
         return NextResponse.json({ content: OFF_TOPIC_REPLY })
       }
