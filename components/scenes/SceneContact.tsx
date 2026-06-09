@@ -61,6 +61,9 @@ Quand tu as TOUTES les infos (les 12 points), envoie UN message de confirmation 
 Pour "type" utilise uniquement : airport, disposal, event, distance.
 Pour mise à disposition, destination = "N/A".`
 
+const SESSION_KEY  = 'elia_msg_count'
+const INACTIVITY_MS = 7 * 60 * 1000
+
 /**
  * Scène 5 — Contact conversationnel IA.
  * Chat avec Claude (Anthropic API) qui collecte les infos,
@@ -81,6 +84,10 @@ export default function SceneContact() {
   const [loading,   setLoading]   = useState(false)
   const [collected, setCollected] = useState<CollectedData>({})
   const [phase,     setPhase]     = useState<'chat' | 'calculating' | 'done' | 'expired' | 'limit'>('chat')
+  const [messageCount, setMessageCount] = useState<number>(() => {
+    if (typeof window === 'undefined') return 0
+    return parseInt(sessionStorage.getItem(SESSION_KEY) ?? '0', 10)
+  })
 
   // ── Smart scroll — scroll en bas seulement si déjà proche du bas ──
   useEffect(() => {
@@ -112,11 +119,14 @@ export default function SceneContact() {
   }, [])
 
   // ── Appel Claude API ──────────────────────────────────────
-  const callClaude = useCallback(async (history: Message[]): Promise<string> => {
+  const callClaude = useCallback(async (history: Message[], count: number): Promise<string> => {
     const res = await fetch('/api/chat', {
       method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({ messages: history, system: SYSTEM_PROMPT }),
+      headers: {
+        'Content-Type':    'application/json',
+        'X-Message-Count': String(count),
+      },
+      body: JSON.stringify({ messages: history, system: SYSTEM_PROMPT }),
     })
     const data = await res.json()
     return data.content ?? 'Une erreur est survenue.'
@@ -208,6 +218,11 @@ export default function SceneContact() {
     const text = input.trim()
     if (!text || loading || phase !== 'chat') return
 
+    if (messageCount >= 20) {
+      setPhase('limit')
+      return
+    }
+
     const userMsg: Message = { role: 'user', content: text }
     const newHistory = [...messages, userMsg]
 
@@ -215,12 +230,17 @@ export default function SceneContact() {
     setInput('')
     setLoading(true)
 
+    const newCount = messageCount + 1
+    setMessageCount(newCount)
+    sessionStorage.setItem(SESSION_KEY, String(newCount))
+
     try {
-      const reply    = await callClaude(newHistory)
+      const reply    = await callClaude(newHistory, newCount)
       const rawReply = reply.replace(/<COLLECTED>[\s\S]*?<\/COLLECTED>/, '').trim()
 
       const assistantMsg: Message = { role: 'assistant', content: rawReply }
       setMessages(prev => [...prev, assistantMsg])
+      if (newCount >= 20) setPhase('limit')
 
       // Vérifie si toutes les données sont collectées
       const data = extractCollected(reply)
@@ -235,7 +255,7 @@ export default function SceneContact() {
       setLoading(false)
       inputRef.current?.focus()
     }
-  }, [input, loading, messages, phase, callClaude, processDevis])
+  }, [input, loading, messages, phase, callClaude, processDevis, messageCount])
 
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
