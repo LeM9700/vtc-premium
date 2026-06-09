@@ -32,6 +32,9 @@ interface CollectedData {
 const SYSTEM_PROMPT = `Tu es l'assistant de réservation d'un service de chauffeur privé premium.
 Tu t'appelles "Élia". Tu es élégant, chaleureux, concis. Jamais de listes à puces. Jamais de markdown visible.
 
+RÈGLE PRIORITAIRE :
+- Si le client pose une question sans rapport avec la réservation d'un trajet (météo, actualités, recettes, politique, code, blagues, sport, santé, traduction, etc.), réponds UNIQUEMENT : "Je suis Élia, votre assistante réservation. Je ne suis pas en mesure de répondre à cela — mais je serai ravie de vous préparer un devis pour votre prochain trajet."
+
 RÈGLES ABSOLUES :
 - Ne donne JAMAIS d'estimation de prix, de distance ou de durée — le calcul est automatique après collecte.
 - Si le client demande le prix, réponds : "Le tarif exact sera calculé et affiché dès que j'ai toutes vos informations."
@@ -77,12 +80,14 @@ export default function SceneContact() {
   const [input,     setInput]     = useState('')
   const [loading,   setLoading]   = useState(false)
   const [collected, setCollected] = useState<CollectedData>({})
-  const [phase,     setPhase]     = useState<'chat' | 'calculating' | 'done'>('chat')
+  const [phase,     setPhase]     = useState<'chat' | 'calculating' | 'done' | 'expired' | 'limit'>('chat')
 
-  // ── Scroll automatique vers le bas ────────────────────────
+  // ── Smart scroll — scroll en bas seulement si déjà proche du bas ──
   useEffect(() => {
     const el = messagesRef.current
-    if (el) el.scrollTop = el.scrollHeight
+    if (!el) return
+    const isNearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 80
+    if (isNearBottom) el.scrollTop = el.scrollHeight
   }, [messages, loading])
 
   // ── Animation entrée section ──────────────────────────────
@@ -287,7 +292,10 @@ export default function SceneContact() {
         <div
           ref={messagesRef}
           className="flex flex-col gap-6 px-8 py-8 h-96 overflow-y-auto scroll-smooth"
-          style={{ scrollbarWidth: 'none' }}
+          style={{
+            scrollbarWidth: 'thin',
+            scrollbarColor: 'rgba(201,169,110,0.3) transparent',
+          }}
         >
           {messages.map((msg, i) => (
             <div
