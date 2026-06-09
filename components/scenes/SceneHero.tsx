@@ -1,6 +1,13 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
+import type { ReactNode } from 'react'
+
+interface SceneHeroProps {
+  title?:    ReactNode
+  subtitle?: string
+  ctaLabel?: string
+}
 import { gsap, ScrollTrigger } from '@/lib/gsap'
 import SplitType from 'split-type'
 
@@ -10,7 +17,11 @@ import SplitType from 'split-type'
  * sous-titre + CTA apparaissent en différé.
  * Écoute l'event 'loading:complete' avant de lancer les animations.
  */
-export default function SceneHero() {
+export default function SceneHero({
+  title    = <>Chaque trajet<br /><span className="text-[#C9A96E] italic">est une promesse.</span></>,
+  subtitle = 'Chauffeur privé · Montpellier · Nîmes · Occitanie',
+  ctaLabel = 'Demander un devis',
+}: SceneHeroProps = {}) {
   const sectionRef   = useRef<HTMLElement>(null)
   const videoRef     = useRef<HTMLVideoElement>(null)
   const titleRef     = useRef<HTMLHeadingElement>(null)
@@ -159,8 +170,7 @@ export default function SceneHero() {
           className="font-display text-[#F5F0E8] text-6xl md:text-8xl xl:text-[9rem] font-light leading-none tracking-tight mb-6"
           style={{ perspective: '800px' }}
         >
-          Chaque trajet<br />
-          <span className="text-[#C9A96E] italic">est une promesse.</span>
+          {title}
         </h1>
 
         {/* Sous-titre */}
@@ -168,7 +178,7 @@ export default function SceneHero() {
           ref={subtitleRef}
           className="text-[#F5F0E8]/70 text-lg md:text-xl font-light tracking-widest uppercase mb-10 max-w-md"
         >
-          Chauffeur privé · Montpellier · Nîmes · Occitanie
+          {subtitle}
         </p>
 
         {/* CTA */}
@@ -179,7 +189,7 @@ export default function SceneHero() {
           >
             {/* Fill au hover */}
             <span className="absolute inset-0 bg-[#C9A96E] translate-y-full group-hover:translate-y-0 transition-transform duration-500 ease-[cubic-bezier(0.16,1,0.3,1)]" />
-            <span className="relative">Demander un devis</span>
+            <span className="relative">{ctaLabel}</span>
           </button>
 
           <a
