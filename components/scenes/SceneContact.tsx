@@ -376,6 +376,21 @@ export default function SceneContact() {
               </p>
             </div>
           )}
+
+          {/* Phase limit */}
+          {phase === 'limit' && (
+            <div className="flex justify-start">
+              <p className="text-[#F5F0E8]/60 text-sm font-light leading-relaxed max-w-xs md:max-w-sm">
+                Vous avez atteint le nombre maximum d&apos;échanges pour cette session. Pour finaliser votre réservation, appelez-nous directement :{' '}
+                <a
+                  href="tel:0783699229"
+                  className="text-[#C9A96E] hover:text-[#F5F0E8] transition-colors duration-300 underline underline-offset-2"
+                >
+                  07 83 69 92 29
+                </a>
+              </p>
+            </div>
+          )}
         </div>
 
         {/* Input */}
@@ -386,7 +401,12 @@ export default function SceneContact() {
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={onKeyDown}
-            placeholder={phase === 'done' ? 'Demande envoyée ✓' : 'Votre réponse...'}
+            placeholder={
+              phase === 'done'    ? 'Demande envoyée ✓' :
+              phase === 'limit'   ? 'Session limitée — appelez le 07 83 69 92 29' :
+              phase === 'expired' ? 'Session expirée — rechargez la page' :
+              'Votre réponse...'
+            }
             disabled={loading || phase !== 'chat'}
             className="flex-1 bg-transparent outline-none text-[#F5F0E8] text-sm font-light placeholder:text-[#F5F0E8]/20 disabled:opacity-40"
           />
