@@ -75,6 +75,7 @@ export default function SceneContact() {
   const chatRef       = useRef<HTMLDivElement>(null)
   const messagesRef   = useRef<HTMLDivElement>(null)
   const inputRef      = useRef<HTMLInputElement>(null)
+  const timeoutRef    = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const [messages,  setMessages]  = useState<Message[]>([{
     role:    'assistant',
@@ -89,6 +90,18 @@ export default function SceneContact() {
     return parseInt(sessionStorage.getItem(SESSION_KEY) ?? '0', 10)
   })
 
+  // ── Inactivity timer ─────────────────────────────────────────────────────────
+  const resetInactivityTimer = useCallback(() => {
+    if (timeoutRef.current) clearTimeout(timeoutRef.current)
+    timeoutRef.current = setTimeout(() => {
+      setPhase(prev => prev !== 'chat' ? prev : 'expired')
+      setMessages(prev => [...prev, {
+        role:    'assistant' as const,
+        content: "Votre session a expiré après 7 minutes d'inactivité. Rechargez la page pour démarrer une nouvelle conversation.",
+      }])
+    }, INACTIVITY_MS)
+  }, [])
+
   // ── Smart scroll — scroll en bas seulement si déjà proche du bas ──
   useEffect(() => {
     const el = messagesRef.current
@@ -96,6 +109,12 @@ export default function SceneContact() {
     const isNearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 80
     if (isNearBottom) el.scrollTop = el.scrollHeight
   }, [messages, loading])
+
+  // ── Start inactivity timer on mount, clean up on unmount ─────────────────────
+  useEffect(() => {
+    resetInactivityTimer()
+    return () => { if (timeoutRef.current) clearTimeout(timeoutRef.current) }
+  }, [resetInactivityTimer])
 
   // ── Animation entrée section ──────────────────────────────
   useEffect(() => {
