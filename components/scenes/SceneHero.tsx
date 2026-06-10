@@ -1,12 +1,16 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import type { ReactNode } from 'react'
+import type { ReactNode, MouseEvent } from 'react'
+import Image from 'next/image'
+import { lenisRef } from '@/lib/lenis'
 
 interface SceneHeroProps {
   title?:    ReactNode
   subtitle?: string
   ctaLabel?: string
+  heroImageSrc?: string
+  discoverHref?: string
 }
 import { gsap, ScrollTrigger } from '@/lib/gsap'
 import SplitType from 'split-type'
@@ -21,6 +25,8 @@ export default function SceneHero({
   title    = <>Chaque trajet<br /><span className="text-[#C9A96E] italic">est une promesse.</span></>,
   subtitle = 'Chauffeur privé · Montpellier · Nîmes · Occitanie',
   ctaLabel = 'Demander un devis',
+  heroImageSrc,
+  discoverHref = '#services',
 }: SceneHeroProps = {}) {
   const sectionRef   = useRef<HTMLElement>(null)
   const videoRef     = useRef<HTMLVideoElement>(null)
@@ -39,7 +45,7 @@ export default function SceneHero({
     const scroll   = scrollRef.current
     const overlay  = overlayRef.current
 
-    if (!section || !video || !title || !subtitle || !cta || !scroll || !overlay) return
+    if (!section || (!video && !heroImageSrc) || !title || !subtitle || !cta || !scroll || !overlay) return
 
     // Split le titre en caractères individuels
     const split = new SplitType(title, { types: 'chars' })
@@ -94,9 +100,16 @@ export default function SceneHero({
         }, '-=0.2')
     }
 
-    // Attend que le loading screen ait disparu
+    // Attend que le loading screen ait disparu (une seule fois au premier chargement).
+    // Lors d'une navigation client (Link), le LoadingScreen ne se rejoue pas et
+    // l'event 'loading:complete' ne sera plus jamais redispatché : on lance donc
+    // l'intro immédiatement si elle a déjà eu lieu.
     const onLoadingComplete = () => runIntro()
-    window.addEventListener('loading:complete', onLoadingComplete)
+    if ((window as typeof window & { __loadingComplete?: boolean }).__loadingComplete) {
+      runIntro()
+    } else {
+      window.addEventListener('loading:complete', onLoadingComplete)
+    }
 
     // Parallax de la vidéo au scroll
     ScrollTrigger.create({
@@ -105,9 +118,11 @@ export default function SceneHero({
       end: 'bottom top',
       scrub: true,
       onUpdate: (self) => {
-        gsap.set(video, {
-          yPercent: self.progress * 30, // vidéo monte plus lentement que le scroll
-        })
+       if (video) {
+  gsap.set(video, {
+    yPercent: self.progress * 30,
+  })
+}
       },
     })
 
@@ -132,6 +147,15 @@ export default function SceneHero({
     }
   }, [])
 
+  const handleCtaClick = () => {
+    lenisRef.current?.scrollTo('#contact', { offset: -40 })
+  }
+
+  const handleDiscoverClick = (e: MouseEvent<HTMLAnchorElement>) => {
+    e.preventDefault()
+    lenisRef.current?.scrollTo(discoverHref, { offset: -40 })
+  }
+
   return (
     <section
       ref={sectionRef}
@@ -143,17 +167,26 @@ export default function SceneHero({
         className="absolute inset-0 z-20 bg-[#0A0A0A]"
       />
 
-      {/* Vidéo hero */}
-      <video
-        ref={videoRef}
-        className="absolute inset-0 w-full h-full object-cover scale-110"
-        src="/videos/hero.mp4"
-        autoPlay
-        muted
-        loop
-        playsInline
-        preload="auto"
-      />
+      {heroImageSrc ? (
+  <Image
+    src={heroImageSrc}
+    alt=""
+    fill
+    priority
+    className="absolute inset-0 object-cover scale-110"
+  />
+) : (
+  <video
+    ref={videoRef}
+    className="absolute inset-0 w-full h-full object-cover scale-110"
+    src="/videos/hero.mp4"
+    autoPlay
+    muted
+    loop
+    playsInline
+    preload="auto"
+  />
+)}
 
       {/* Dégradé bas → haut pour lisibilité texte */}
       <div className="absolute inset-0 z-10 bg-gradient-to-t from-[#0A0A0A] via-[#0A0A0A]/40 to-transparent" />
@@ -184,6 +217,7 @@ export default function SceneHero({
         {/* CTA */}
         <div ref={ctaRef} className="flex items-center gap-6">
           <button
+            onClick={handleCtaClick}
             data-cursor
             className="group relative px-10 py-4 border border-[#C9A96E] text-[#C9A96E] font-body text-sm tracking-[0.3em] uppercase overflow-hidden transition-colors duration-500 hover:text-[#0A0A0A]"
           >
@@ -193,7 +227,8 @@ export default function SceneHero({
           </button>
 
           <a
-            href="#services"
+            href={discoverHref}
+            onClick={handleDiscoverClick}
             data-cursor
             className="text-[#F5F0E8]/50 text-sm tracking-widest uppercase hover:text-[#C9A96E] transition-colors duration-300">
             Découvrir →
