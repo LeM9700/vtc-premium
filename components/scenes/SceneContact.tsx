@@ -28,10 +28,18 @@ interface CollectedData {
   prixEstime?:  number
 }
 
-// ── Prompt système ─────────────────────────────────────────────────────────────
-const SYSTEM_PROMPT = `Tu es l'assistant de réservation d'un service de chauffeur privé premium.
-Tu t'appelles "Élia". Tu es élégant, chaleureux, concis. Jamais de listes à puces. Jamais de markdown visible.
+interface SceneContactProps {
+  greeting?:    string
+  contextNote?: string
+}
 
+// ── Prompt système ─────────────────────────────────────────────────────────────
+function buildSystemPrompt(contextNote?: string): string {
+  const contextBlock = contextNote ? `\nCONTEXTE :\n${contextNote}\n` : ''
+
+  return `Tu es l'assistant de réservation d'un service de chauffeur privé premium.
+Tu t'appelles "Élia". Tu es élégant, chaleureux, concis. Jamais de listes à puces. Jamais de markdown visible.
+${contextBlock}
 RÈGLE PRIORITAIRE :
 - Si le client pose une question sans rapport avec la réservation d'un trajet (météo, actualités, recettes, politique, code, blagues, sport, santé, traduction, etc.), réponds UNIQUEMENT : "Je suis Élia, votre assistante réservation. Je ne suis pas en mesure de répondre à cela — mais je serai ravie de vous préparer un devis pour votre prochain trajet."
 
@@ -60,6 +68,7 @@ Quand tu as TOUTES les infos (les 12 points), envoie UN message de confirmation 
 
 Pour "type" utilise uniquement : airport, disposal, event, distance.
 Pour mise à disposition, destination = "N/A".`
+}
 
 const SESSION_KEY  = 'elia_msg_count'
 const INACTIVITY_MS = 7 * 60 * 1000
@@ -69,7 +78,7 @@ const INACTIVITY_MS = 7 * 60 * 1000
  * Chat avec Claude (Anthropic API) qui collecte les infos,
  * calcule le prix via OpenRouteService, envoie l'email via Resend.
  */
-export default function SceneContact() {
+export default function SceneContact({ greeting, contextNote }: SceneContactProps = {}) {
   const sectionRef    = useRef<HTMLElement>(null)
   const titleRef      = useRef<HTMLHeadingElement>(null)
   const chatRef       = useRef<HTMLDivElement>(null)
@@ -79,7 +88,7 @@ export default function SceneContact() {
 
   const [messages,  setMessages]  = useState<Message[]>([{
     role:    'assistant',
-    content: 'Bonsoir. Je suis Élia, votre assistante de réservation. Pour quel type de trajet puis-je vous préparer un devis ?',
+    content: greeting ?? 'Bonsoir. Je suis Élia, votre assistante de réservation. Pour quel type de trajet puis-je vous préparer un devis ?',
   }])
   const [input,     setInput]     = useState('')
   const [loading,   setLoading]   = useState(false)
@@ -148,11 +157,11 @@ export default function SceneContact() {
         'Content-Type':    'application/json',
         'X-Message-Count': String(count),
       },
-      body: JSON.stringify({ messages: history, system: SYSTEM_PROMPT }),
+      body: JSON.stringify({ messages: history, system: buildSystemPrompt(contextNote) }),
     })
     const data = await res.json()
     return data.content ?? 'Une erreur est survenue.'
-  }, [])
+  }, [contextNote])
 
   // ── Extraction données collectées ─────────────────────────
   const extractCollected = (text: string): CollectedData | null => {
