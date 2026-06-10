@@ -118,11 +118,11 @@ export default function SceneHero({
       end: 'bottom top',
       scrub: true,
       onUpdate: (self) => {
-       if (video) {
-  gsap.set(video, {
-    yPercent: self.progress * 30,
-  })
-}
+        if (video) {
+          gsap.set(video, {
+            yPercent: self.progress * 30,
+          })
+        }
       },
     })
 
@@ -168,25 +168,25 @@ export default function SceneHero({
       />
 
       {heroImageSrc ? (
-  <Image
-    src={heroImageSrc}
-    alt=""
-    fill
-    priority
-    className="absolute inset-0 object-cover scale-110"
-  />
-) : (
-  <video
-    ref={videoRef}
-    className="absolute inset-0 w-full h-full object-cover scale-110"
-    src="/videos/hero.mp4"
-    autoPlay
-    muted
-    loop
-    playsInline
-    preload="auto"
-  />
-)}
+        <Image
+          src={heroImageSrc}
+          alt=""
+          fill
+          priority
+          className="absolute inset-0 object-cover scale-110"
+        />
+      ) : (
+        <video
+          ref={videoRef}
+          className="absolute inset-0 w-full h-full object-cover scale-110"
+          src="/videos/hero.mp4"
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="auto"
+        />
+      )}
 
       {/* Dégradé bas → haut pour lisibilité texte */}
       <div className="absolute inset-0 z-10 bg-gradient-to-t from-[#0A0A0A] via-[#0A0A0A]/40 to-transparent" />
