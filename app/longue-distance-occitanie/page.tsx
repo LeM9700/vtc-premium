@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
-import SceneHero    from '@/components/scenes/SceneHero'
-import SceneContact from '@/components/scenes/SceneContact'
+import SceneHero         from '@/components/scenes/SceneHero'
+import SceneContact      from '@/components/scenes/SceneContact'
+import SectionHighlights from '@/components/ui/SectionHighlights'
 
 export const metadata: Metadata = {
   title: 'VTC Longue Distance Occitanie | Paris, Lyon, Monaco',
@@ -36,6 +37,7 @@ export default function LongueDistanceOccitanie() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <SceneHero
+        heroImageSrc="/images/hero-longue-distance.webp"
         title={
           <>
             Toutes destinations,<br />
@@ -44,8 +46,36 @@ export default function LongueDistanceOccitanie() {
         }
         subtitle="Longue distance · Paris · Lyon · Monaco · Genève"
         ctaLabel="Planifier mon trajet"
+        discoverHref="#highlights"
       />
-      <SceneContact />
+      <SectionHighlights
+        label="Longue distance · France & Europe"
+        title={
+          <>
+            La route est longue.<br />
+            <em className="text-[#C9A96E] not-italic">Le confort, lui, ne faiblit pas.</em>
+          </>
+        }
+        intro="Montpellier ou Nîmes vers Paris, Lyon, Marseille, Monaco, Genève ou toute autre destination — VTCLAND transforme chaque grand trajet en moment de sérénité. Wi-Fi, silence, confort : vous travaillez ou vous reposez pendant que nous conduisons."
+        highlights={[
+          {
+            title: 'Aucune correspondance',
+            body:  'Porte à porte, sans rupture de charge ni stress des gares. Un seul véhicule, un seul chauffeur.',
+          },
+          {
+            title: 'Wi-Fi & chargeurs à bord',
+            body:  'Restez connecté et productif tout au long du trajet. Votre bureau vous accompagne.',
+          },
+          {
+            title: 'Tarif fixe à la réservation',
+            body:  'Le prix est arrêté dès la confirmation. Aucune surprise à l\'arrivée, quelle que soit la durée du trajet.',
+          },
+        ]}
+      />
+      <SceneContact
+        greeting="Bonsoir. Indiquez-moi votre ville de départ (Montpellier, Nîmes...) et votre destination longue distance, et je vous prépare un devis."
+        contextNote="Le type de trajet est 'distance'. Ne demande pas le type : commence directement par les adresses de départ et de destination."
+      />
     </main>
   )
 }

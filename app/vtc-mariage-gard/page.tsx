@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
-import SceneHero    from '@/components/scenes/SceneHero'
-import SceneContact from '@/components/scenes/SceneContact'
+import SceneHero         from '@/components/scenes/SceneHero'
+import SceneContact      from '@/components/scenes/SceneContact'
+import SectionHighlights from '@/components/ui/SectionHighlights'
 
 export const metadata: Metadata = {
   title: 'VTC Mariage Gard & Hérault | Chauffeur Événementiel',
@@ -36,6 +37,7 @@ export default function VtcMariageGard() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <SceneHero
+        heroImageSrc="/images/hero-mariage-gard.webp"
         title={
           <>
             Votre mariage,<br />
@@ -44,8 +46,36 @@ export default function VtcMariageGard() {
         }
         subtitle="Chauffeur événementiel · Gard & Hérault · Sur devis"
         ctaLabel="Devis mariage"
+        discoverHref="#highlights"
       />
-      <SceneContact />
+      <SectionHighlights
+        label="Mariage · Gard & Hérault · Événementiel"
+        title={
+          <>
+            Le plus beau jour,<br />
+            <em className="text-[#C9A96E] not-italic">sans fausse note.</em>
+          </>
+        }
+        intro="Mas provençaux du Gard, domaines viticoles de l'Hérault, châteaux d'Occitanie — chaque lieu a son caractère, VTCLAND s'y adapte. Discret, élégant, à l'heure exacte. Du cortège au retour de soirée, nous assurons chaque trajet de votre mariage avec l'élégance qu'il mérite."
+        highlights={[
+          {
+            title: 'Cortège & navettes',
+            body:  'Coordination de plusieurs véhicules si nécessaire. Tous vos invités arrivent ensemble, sans improvisation.',
+          },
+          {
+            title: 'Attentions personnalisées',
+            body:  'Rubans, fleurs blanches, champagne à bord — nous accueillons vos demandes pour que le détail soit parfait.',
+          },
+          {
+            title: 'Ponctualité absolue',
+            body:  'Le jour J, pas de place au hasard. Votre chauffeur reconnaît les lieux en amont et anticipe chaque trajet.',
+          },
+        ]}
+      />
+      <SceneContact
+        greeting="Bonsoir. Je suis ravie de vous accompagner pour le transport de votre mariage dans le Gard ou l'Hérault. Quelle est la date de la cérémonie ?"
+        contextNote="Le type de trajet est 'event' (mariage). Ne demande pas le type : commence directement par la date de la cérémonie."
+      />
     </main>
   )
 }

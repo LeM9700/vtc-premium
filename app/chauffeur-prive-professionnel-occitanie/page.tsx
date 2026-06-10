@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
-import SceneHero    from '@/components/scenes/SceneHero'
-import SceneContact from '@/components/scenes/SceneContact'
+import SceneHero         from '@/components/scenes/SceneHero'
+import SceneContact      from '@/components/scenes/SceneContact'
+import SectionHighlights from '@/components/ui/SectionHighlights'
 
 export const metadata: Metadata = {
   title: 'Chauffeur Privé Professionnel Occitanie',
@@ -33,6 +34,7 @@ export default function ChauffeurProOccitanie() {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
       <SceneHero
+        heroImageSrc="/images/hero-chauffeur-pro.webp"
         title={
           <>
             Transport<br />
@@ -41,8 +43,36 @@ export default function ChauffeurProOccitanie() {
         }
         subtitle="Chauffeur professionnel · Occitanie · Facturation entreprise"
         ctaLabel="Devis entreprise"
+        discoverHref="#highlights"
       />
-      <SceneContact />
+      <SectionHighlights
+        label="Transport d'affaires · Occitanie"
+        title={
+          <>
+            L&apos;excellence<br />
+            <em className="text-[#C9A96E] not-italic">comme standard.</em>
+          </>
+        }
+        intro="Vos collaborateurs méritent mieux que les aléas des transports en commun. VTCLAND est le partenaire transport des entreprises en Occitanie — mise à disposition journalière, transferts gare et aéroport, navettes de séminaire à Montpellier et Nîmes. Facturation entreprise disponible."
+        highlights={[
+          {
+            title: 'Mise à disposition dédiée',
+            body:  'Votre chauffeur reste disponible entre vos rendez-vous sur la journée. Aucun temps mort, aucune attente.',
+          },
+          {
+            title: 'Facturation entreprise',
+            body:  'Compte client, factures avec TVA, reporting mensuel. Intégration simplifiée à votre gestion de frais.',
+          },
+          {
+            title: 'Confidentialité totale',
+            body:  'Discrétion absolue pour vos échanges à bord. Votre chauffeur est soumis à une stricte obligation de réserve.',
+          },
+        ]}
+      />
+      <SceneContact
+        greeting="Bonsoir. Je vous prépare un devis pour une mise à disposition professionnelle en Occitanie. Combien d'heures de mise à disposition souhaitez-vous ?"
+        contextNote="Le type de trajet est 'disposal'. Ne demande pas le type : commence directement par le nombre d'heures souhaité."
+      />
     </main>
   )
 }
