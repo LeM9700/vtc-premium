@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
-import SceneHero          from '@/components/scenes/SceneHero'
-import SceneContact       from '@/components/scenes/SceneContact'
-import SectionHighlights  from '@/components/ui/SectionHighlights'
+import SceneHero         from '@/components/scenes/SceneHero'
+import SceneContact      from '@/components/scenes/SceneContact'
+import SectionHighlights from '@/components/ui/SectionHighlights'
 
 export const metadata: Metadata = {
   title: 'Transfert Aéroport Montpellier-Méditerranée',
