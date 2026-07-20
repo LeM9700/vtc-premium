@@ -1,9 +1,12 @@
 import type { Metadata } from 'next'
 import { Cormorant_Garamond, DM_Sans } from 'next/font/google'
+import { Analytics }      from '@vercel/analytics/next'
+import { SpeedInsights }  from '@vercel/speed-insights/next'
 import SmoothScroller from '@/components/layout/SmoothScroller'
 import CustomCursor   from '@/components/ui/CustomCursor'
 import LoadingScreen  from '@/components/ui/LoadingScreen'
-import JsonLd from '@/components/seo/JsonLd'
+import JsonLd         from '@/components/seo/JsonLd'
+import FooterSeo      from '@/components/layout/FooterSeo'
 import '@/app/globals.css'
 
 const cormorant = Cormorant_Garamond({
@@ -68,12 +71,31 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="fr" className={`${cormorant.variable} ${dmSans.variable}`}>
       <body className="bg-[#0A0A0A] text-[#F5F0E8] overflow-x-hidden">
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[9999] focus:bg-[#C9A96E] focus:text-[#0A0A0A] focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:rounded-sm"
+        >
+          Aller au contenu principal
+        </a>
         <JsonLd />
         <LoadingScreen />
         <SmoothScroller>
           <CustomCursor />
-          {children}
+          <div id="main-content" tabIndex={-1}>
+            {children}
+          </div>
+          <FooterSeo />
         </SmoothScroller>
+        {/* CTA téléphonique persistant sur mobile — le numéro n'était sinon
+            visible que dans le footer ou en session de chat limitée/expirée. */}
+        <a
+          href="tel:0783699229"
+          className="md:hidden fixed bottom-4 right-4 z-[9990] flex items-center gap-2 bg-[#C9A96E] text-[#0A0A0A] px-5 py-3 rounded-full text-xs font-medium tracking-widest uppercase shadow-lg"
+        >
+          Appeler
+        </a>
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   )
