@@ -96,7 +96,7 @@ export default function SceneServices() {
     <section
       ref={sectionRef}
       id="services"
-      className="relative min-h-screen w-full bg-[#0A0A0A] px-12 md:px-24 py-32 overflow-hidden"
+      className="relative min-h-dvh w-full bg-[#0A0A0A] px-6 sm:px-8 md:px-24 py-20 sm:py-24 md:py-32 overflow-hidden"
     >
 
       {/* Fond décoratif */}
@@ -113,7 +113,7 @@ export default function SceneServices() {
 
         <h2
           ref={titleRef}
-          className="font-display text-[#F5F0E8] text-5xl md:text-7xl font-light leading-tight max-w-2xl"
+          className="font-display text-[#F5F0E8] text-4xl sm:text-5xl md:text-7xl font-light leading-tight max-w-2xl"
         >
           Un service pensé<br />
           <em className="text-[#C9A96E] not-italic">pour l&apos;exception</em>
