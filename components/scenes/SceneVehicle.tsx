@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { gsap, ScrollTrigger } from '@/lib/gsap'
+import { gsap, ScrollTrigger, prefersReducedMotion } from '@/lib/gsap'
 
 /**
  * Scène 2 — Showcase véhicule.
@@ -26,6 +26,15 @@ export default function SceneVehicle() {
     const progress = progressRef.current
 
     if (!section || !video || !label || !title || !specs || !progress) return
+
+    if (prefersReducedMotion()) {
+      // Pas de pin/scrub scroll-jacké : contenu statique visible d'emblée,
+      // vidéo figée sur son premier frame.
+      gsap.set([label, title], { opacity: 1, x: 0 })
+      gsap.set(specs.querySelectorAll('[data-spec]'), { opacity: 1, y: 0 })
+      gsap.set(progress, { scaleX: 1 })
+      return
+    }
 
     const PIN_DISTANCE = window.innerHeight * 4
 
@@ -178,7 +187,7 @@ export default function SceneVehicle() {
                 <p className="text-[#F5F0E8] text-sm font-light">
                   {spec.value}
                 </p>
-                <p className="text-[#F5F0E8]/40 text-xs tracking-widest uppercase">
+                <p className="text-[#F5F0E8]/60 text-xs tracking-widest uppercase">
                   {spec.label}
                 </p>
               </div>
@@ -198,7 +207,7 @@ export default function SceneVehicle() {
 
       {/* Numéro de scène discret */}
       <div className="absolute bottom-8 right-12 z-20">
-        <span className="font-display text-[#F5F0E8]/20 text-6xl font-light">
+        <span className="font-display text-[#F5F0E8]/40 text-6xl font-light">
           02
         </span>
       </div>
