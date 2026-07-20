@@ -102,7 +102,7 @@ export default function SceneSocialProof({ reviews }: SceneSocialProofProps) {
   return (
     <section
       ref={sectionRef}
-      className="relative min-h-screen w-full bg-[#111111] px-12 md:px-24 py-32 overflow-hidden"
+      className="relative min-h-dvh w-full bg-[#111111] px-6 sm:px-8 md:px-24 py-20 sm:py-24 md:py-32 overflow-hidden"
     >
       {hasReviews && (
         <script
@@ -129,7 +129,7 @@ export default function SceneSocialProof({ reviews }: SceneSocialProofProps) {
       )}
 
       {/* Ligne décorative top */}
-      <div className="absolute top-0 left-12 md:left-24 right-12 md:right-24 h-px bg-gradient-to-r from-transparent via-[#C9A96E]/30 to-transparent" />
+      <div className="absolute top-0 left-6 sm:left-8 md:left-24 right-6 sm:right-8 md:right-24 h-px bg-gradient-to-r from-transparent via-[#C9A96E]/30 to-transparent" />
 
       {/* Header */}
       <div className="relative z-10 mb-20">
@@ -142,7 +142,7 @@ export default function SceneSocialProof({ reviews }: SceneSocialProofProps) {
 
         <h2
           ref={titleRef}
-          className="font-display text-[#F5F0E8] text-5xl md:text-7xl font-light leading-tight max-w-2xl"
+          className="font-display text-[#F5F0E8] text-4xl sm:text-5xl md:text-7xl font-light leading-tight max-w-2xl"
         >
           La confiance,<br />
           <em className="text-[#C9A96E] not-italic">méritée</em>
