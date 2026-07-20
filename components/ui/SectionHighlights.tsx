@@ -48,7 +48,7 @@ export default function SectionHighlights({ label, title, intro, highlights }: S
             <h3 className="font-display text-[#F5F0E8] text-xl font-light">
               {h.title}
             </h3>
-            <p className="text-[#F5F0E8]/40 text-sm leading-relaxed font-light">
+            <p className="text-[#F5F0E8]/60 text-sm leading-relaxed font-light">
               {h.body}
             </p>
           </div>
