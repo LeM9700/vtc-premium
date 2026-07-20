@@ -1,8 +1,7 @@
 'use client'
 
 import { useEffect, useRef } from 'react'
-import { gsap, ScrollTrigger } from '@/lib/gsap'
-import SplitType from 'split-type'
+import { gsap, ScrollTrigger, prefersReducedMotion } from '@/lib/gsap'
 
 /**
  * Scène 1 — Identité / Manifeste.
@@ -25,6 +24,17 @@ export default function SceneIdentity() {
     const mask     = maskRef.current
 
     if (!section || !manifest || !line || !stats || !mask) return
+
+    if (prefersReducedMotion()) {
+      gsap.set(mask, { scaleX: 0 })
+      gsap.set(manifest, { opacity: 1 })
+      gsap.set(line, { scaleX: 1 })
+      gsap.set(stats.children, { opacity: 1, y: 0 })
+      stats.querySelectorAll<HTMLElement>('[data-count]').forEach(el => {
+        el.textContent = el.dataset.count ?? '0'
+      })
+      return
+    }
 
     const ctx = gsap.context(() => {
 
@@ -63,6 +73,11 @@ export default function SceneIdentity() {
         const target = parseInt(el.dataset.count ?? '0', 10)
         const obj = { val: 0 }
 
+        // aria-hidden pendant le décompte : évite qu'un lecteur d'écran
+        // annonce "0, 1, 2, 3…" — la valeur finale reste lisible via le
+        // span .sr-only jumeau (voir JSX).
+        el.setAttribute('aria-hidden', 'true')
+
         gsap.to(obj, {
           val: target,
           duration: 2,
@@ -73,6 +88,9 @@ export default function SceneIdentity() {
           },
           onUpdate: () => {
             el.textContent = Math.round(obj.val).toString()
+          },
+          onComplete: () => {
+            el.removeAttribute('aria-hidden')
           },
         })
       })
@@ -152,7 +170,8 @@ export default function SceneIdentity() {
               >
                 0
               </span>
-              <span className="font-display text-[#C9A96E] text-3xl font-light mb-1">
+              <span className="sr-only">{stat.value}{stat.suffix}</span>
+              <span aria-hidden className="font-display text-[#C9A96E] text-3xl font-light mb-1">
                 {stat.suffix}
               </span>
             </div>
