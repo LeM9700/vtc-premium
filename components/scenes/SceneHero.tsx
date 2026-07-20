@@ -229,7 +229,7 @@ export default function SceneHero({
       <div className="absolute inset-0 z-10 bg-gradient-to-r from-[#0A0A0A]/60 to-transparent" />
 
       {/* Contenu hero */}
-      <div className="absolute inset-0 z-30 flex flex-col justify-end pb-20 px-6 sm:px-8 md:px-12 lg:px-24">
+      <div className="absolute inset-0 z-30 flex flex-col justify-end pb-20 px-6 sm:px-8 md:px-24">
 
         {/* Titre principal */}
         <h1
