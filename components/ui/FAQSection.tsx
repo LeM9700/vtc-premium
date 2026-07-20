@@ -24,7 +24,7 @@ export default function FAQSection({ items, title = 'Questions fréquentes' }: F
   }
 
   return (
-    <section className="relative bg-[#0A0A0A] px-12 md:px-24 py-32 border-t border-[#F5F0E8]/10">
+    <section className="relative bg-[#0A0A0A] px-6 sm:px-8 md:px-24 py-20 sm:py-24 md:py-32 border-t border-[#F5F0E8]/10">
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
@@ -37,7 +37,7 @@ export default function FAQSection({ items, title = 'Questions fréquentes' }: F
         </span>
       </div>
 
-      <h2 className="font-display text-[#F5F0E8] text-4xl md:text-5xl font-light mb-16 max-w-2xl">
+      <h2 className="font-display text-[#F5F0E8] text-3xl sm:text-4xl md:text-5xl font-light mb-16 max-w-2xl">
         {title}
       </h2>
 
