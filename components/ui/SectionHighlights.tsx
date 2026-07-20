@@ -14,8 +14,8 @@ interface SectionHighlightsProps {
 
 export default function SectionHighlights({ label, title, intro, highlights }: SectionHighlightsProps) {
   return (
-    <section id="highlights" className="relative bg-[#111111] px-12 md:px-24 py-32">
-      <div className="absolute top-0 left-12 md:left-24 right-12 md:right-24 h-px bg-gradient-to-r from-transparent via-[#C9A96E]/30 to-transparent" />
+    <section id="highlights" className="relative bg-[#111111] px-6 sm:px-8 md:px-24 py-20 sm:py-24 md:py-32">
+      <div className="absolute top-0 left-6 sm:left-8 md:left-24 right-6 sm:right-8 md:right-24 h-px bg-gradient-to-r from-transparent via-[#C9A96E]/30 to-transparent" />
 
       {/* Label */}
       <div className="flex items-center gap-4 mb-16">
@@ -27,7 +27,7 @@ export default function SectionHighlights({ label, title, intro, highlights }: S
 
       {/* Titre + intro */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-16 mb-24">
-        <h2 className="font-display text-[#F5F0E8] text-5xl md:text-6xl font-light leading-tight">
+        <h2 className="font-display text-[#F5F0E8] text-4xl sm:text-5xl md:text-6xl font-light leading-tight">
           {title}
         </h2>
         <p className="text-[#F5F0E8]/50 text-base leading-relaxed font-light md:self-end">
