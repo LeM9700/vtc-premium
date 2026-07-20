@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { ReactNode, MouseEvent } from 'react'
 import Image from 'next/image'
 import { lenisRef } from '@/lib/lenis'
@@ -10,9 +10,10 @@ interface SceneHeroProps {
   subtitle?: string
   ctaLabel?: string
   heroImageSrc?: string
+  imageAlt?: string
   discoverHref?: string
 }
-import { gsap, ScrollTrigger } from '@/lib/gsap'
+import { gsap, ScrollTrigger, prefersReducedMotion } from '@/lib/gsap'
 import SplitType from 'split-type'
 
 /**
@@ -26,6 +27,7 @@ export default function SceneHero({
   subtitle = 'Chauffeur privé · Montpellier · Nîmes · Occitanie',
   ctaLabel = 'Demander un devis',
   heroImageSrc,
+  imageAlt = '',
   discoverHref = '#services',
 }: SceneHeroProps = {}) {
   const sectionRef   = useRef<HTMLElement>(null)
@@ -35,6 +37,8 @@ export default function SceneHero({
   const ctaRef       = useRef<HTMLDivElement>(null)
   const scrollRef    = useRef<HTMLDivElement>(null)
   const overlayRef   = useRef<HTMLDivElement>(null)
+
+  const [isPlaying, setIsPlaying] = useState(true)
 
   useEffect(() => {
     const section  = sectionRef.current
@@ -46,6 +50,12 @@ export default function SceneHero({
     const overlay  = overlayRef.current
 
     if (!section || (!video && !heroImageSrc) || !title || !subtitle || !cta || !scroll || !overlay) return
+
+    if (prefersReducedMotion()) {
+      gsap.set(overlay, { opacity: 0 })
+      gsap.set([title, subtitle, cta, scroll], { opacity: 1, y: 0 })
+      return
+    }
 
     // Split le titre en caractères individuels
     const split = new SplitType(title, { types: 'chars' })
@@ -156,10 +166,22 @@ export default function SceneHero({
     lenisRef.current?.scrollTo(discoverHref, { offset: -40 })
   }
 
+  const toggleVideo = () => {
+    const video = videoRef.current
+    if (!video) return
+    if (video.paused) {
+      video.play()
+      setIsPlaying(true)
+    } else {
+      video.pause()
+      setIsPlaying(false)
+    }
+  }
+
   return (
     <section
       ref={sectionRef}
-      className="relative h-screen w-full overflow-hidden"
+      className="relative h-dvh w-full overflow-hidden"
     >
       {/* Overlay noir initial */}
       <div
@@ -170,7 +192,7 @@ export default function SceneHero({
       {heroImageSrc ? (
         <Image
           src={heroImageSrc}
-          alt=""
+          alt={imageAlt}
           fill
           priority
           className="absolute inset-0 object-cover scale-110"
@@ -184,8 +206,20 @@ export default function SceneHero({
           muted
           loop
           playsInline
-          preload="auto"
+          preload="none"
         />
+      )}
+
+      {/* Contrôle vidéo — WCAG 1.4.2 : toute vidéo en autoplay > 3s doit pouvoir être mise en pause */}
+      {!heroImageSrc && (
+        <button
+          onClick={toggleVideo}
+          aria-label={isPlaying ? 'Mettre la vidéo en pause' : 'Lancer la vidéo'}
+          data-cursor
+          className="absolute bottom-8 left-12 z-30 inline-block p-2 -m-2 text-[#F5F0E8]/60 hover:text-[#C9A96E] transition-colors duration-300 text-xs tracking-widest uppercase"
+        >
+          {isPlaying ? '❙❙ Pause' : '▶ Lecture'}
+        </button>
       )}
 
       {/* Dégradé bas → haut pour lisibilité texte */}
@@ -195,12 +229,12 @@ export default function SceneHero({
       <div className="absolute inset-0 z-10 bg-gradient-to-r from-[#0A0A0A]/60 to-transparent" />
 
       {/* Contenu hero */}
-      <div className="absolute inset-0 z-30 flex flex-col justify-end pb-20 px-12 md:px-24">
+      <div className="absolute inset-0 z-30 flex flex-col justify-end pb-20 px-6 sm:px-8 md:px-12 lg:px-24">
 
         {/* Titre principal */}
         <h1
           ref={titleRef}
-          className="font-display text-[#F5F0E8] text-6xl md:text-8xl xl:text-[9rem] font-light leading-none tracking-tight mb-6"
+          className="font-display text-[#F5F0E8] text-5xl sm:text-6xl md:text-8xl xl:text-[9rem] font-light leading-none tracking-tight mb-6"
           style={{ perspective: '800px' }}
         >
           {title}
@@ -230,7 +264,7 @@ export default function SceneHero({
             href={discoverHref}
             onClick={handleDiscoverClick}
             data-cursor
-            className="text-[#F5F0E8]/50 text-sm tracking-widest uppercase hover:text-[#C9A96E] transition-colors duration-300">
+            className="inline-block p-2 -m-2 text-[#F5F0E8]/50 text-sm tracking-widest uppercase hover:text-[#C9A96E] transition-colors duration-300">
             Découvrir →
           </a>
         </div>
@@ -241,7 +275,7 @@ export default function SceneHero({
         ref={scrollRef}
         className="absolute bottom-8 right-12 z-30 flex flex-col items-center gap-3"
       >
-        <span className="text-[#F5F0E8]/30 text-xs tracking-[0.4em] uppercase rotate-90 origin-center">
+        <span className="text-[#F5F0E8]/60 text-xs tracking-[0.4em] uppercase rotate-90 origin-center">
           Scroll
         </span>
         <div className="w-px h-16 bg-gradient-to-b from-[#C9A96E] to-transparent animate-pulse" />
@@ -249,9 +283,16 @@ export default function SceneHero({
 
       {/* Badge discret top-right */}
       <div className="absolute top-8 right-12 z-30 text-right">
-        <p className="text-[#F5F0E8]/30 text-xs tracking-[0.3em] uppercase">
+        <p className="text-[#F5F0E8]/60 text-xs tracking-[0.3em] uppercase mb-1">
           Disponible 24h/24 en Occitanie
         </p>
+        <a
+          href="tel:0783699229"
+          data-cursor
+          className="text-[#C9A96E] text-xs tracking-[0.3em] uppercase hover:text-[#F5F0E8] transition-colors duration-300"
+        >
+          07 83 69 92 29
+        </a>
       </div>
     </section>
   )
