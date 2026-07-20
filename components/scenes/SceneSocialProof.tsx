@@ -2,17 +2,35 @@
 
 import { useEffect, useRef } from 'react'
 import { gsap, ScrollTrigger } from '@/lib/gsap'
+import type { GoogleReviewsData } from '@/lib/googleReviews'
+
+const FALLBACK_MAPS_URI = 'https://maps.app.goo.gl/dHeBLrgB8P3VyAZ77'
+
+const QUICK_STATS = [
+  { value: '100%', label: 'Ponctualité' },
+  { value: '5★',   label: 'Confort'     },
+  { value: '0',    label: 'Incident'    },
+] as const
+
+interface SceneSocialProofProps {
+  reviews: GoogleReviewsData | null
+}
 
 /**
  * Scène 4 — Social Proof.
- * 3 citations clients, note Google stylisée, logos partenaires.
- * Animations sobres — le luxe ne crie pas.
+ * Note + avis affichés proviennent de la fiche Google Business Profile réelle
+ * (lib/googleReviews.ts, via l'API Places). Sans GOOGLE_PLACES_API_KEY ou en
+ * cas d'échec de l'appel, on affiche un lien vers la fiche plutôt que
+ * d'inventer une note ou des témoignages.
  */
-export default function SceneSocialProof() {
+export default function SceneSocialProof({ reviews }: SceneSocialProofProps) {
   const sectionRef = useRef<HTMLElement>(null)
   const titleRef   = useRef<HTMLHeadingElement>(null)
   const quotesRef  = useRef<HTMLDivElement>(null)
   const ratingRef  = useRef<HTMLDivElement>(null)
+
+  const hasReviews = !!reviews && reviews.reviews.length > 0
+  const mapsUri = reviews?.mapsUri ?? FALLBACK_MAPS_URI
 
   useEffect(() => {
     const section = sectionRef.current
@@ -61,8 +79,10 @@ export default function SceneSocialProof() {
       })
 
       // ── Étoiles se remplissent une par une ───────────────────
+      // Absentes en repli (pas d'avis chargés) — gsap.from() sur un NodeList
+      // vide logue un warning "target not found", d'où la garde de longueur.
       const stars = rating.querySelectorAll<HTMLElement>('[data-star]')
-      gsap.from(stars, {
+      if (stars.length > 0) gsap.from(stars, {
         opacity: 0,
         scale: 0,
         duration: 0.4,
@@ -84,6 +104,29 @@ export default function SceneSocialProof() {
       ref={sectionRef}
       className="relative min-h-screen w-full bg-[#111111] px-12 md:px-24 py-32 overflow-hidden"
     >
+      {hasReviews && (
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              '@context': 'https://schema.org',
+              '@type': 'LocalBusiness',
+              name: 'VTCLAND',
+              aggregateRating: {
+                '@type': 'AggregateRating',
+                ratingValue: reviews!.rating,
+                reviewCount: reviews!.userRatingCount,
+              },
+              review: reviews!.reviews.map((r) => ({
+                '@type': 'Review',
+                author: { '@type': 'Person', name: r.author },
+                reviewRating: { '@type': 'Rating', ratingValue: r.rating },
+                reviewBody: r.text,
+              })),
+            }),
+          }}
+        />
+      )}
 
       {/* Ligne décorative top */}
       <div className="absolute top-0 left-12 md:left-24 right-12 md:right-24 h-px bg-gradient-to-r from-transparent via-[#C9A96E]/30 to-transparent" />
@@ -107,38 +150,51 @@ export default function SceneSocialProof() {
       </div>
 
       {/* Citations */}
-      <div
-        ref={quotesRef}
-        className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-8 mb-24"
-      >
-        {TESTIMONIALS.map((t) => (
-          <div
-            key={t.author}
-            className="relative border-l border-[#C9A96E]/20 pl-8 py-2"
-          >
-            {/* Guillemet décoratif */}
-            <span className="absolute -top-4 left-6 font-display text-[#C9A96E]/20 text-7xl font-light leading-none">
-              &quot;
-            </span>
+      {hasReviews ? (
+        <div
+          ref={quotesRef}
+          className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-8 mb-24"
+        >
+          {reviews!.reviews.map((r) => (
+            <div
+              key={`${r.author}-${r.relativeTime}`}
+              className="relative border-l border-[#C9A96E]/20 pl-8 py-2"
+            >
+              {/* Guillemet décoratif */}
+              <span
+                className="absolute -top-4 left-6 font-display text-[#C9A96E]/20 text-7xl font-light leading-none"
+                aria-hidden
+              >
+                &quot;
+              </span>
 
-            <p className="font-display text-[#F5F0E8]/80 text-xl font-light leading-relaxed mb-6 italic">
-              {t.quote}
-            </p>
+              <p className="font-display text-[#F5F0E8]/80 text-xl font-light leading-relaxed mb-6 italic">
+                {r.text}
+              </p>
 
-            <div className="flex flex-col gap-1">
-              <span className="text-[#F5F0E8] text-sm tracking-wide">
-                {t.author}
-              </span>
-              <span className="text-[#F5F0E8]/30 text-xs tracking-widest uppercase">
-                {t.role}
-              </span>
-              <span className="text-[#C9A96E]/50 text-xs tracking-[0.3em] uppercase">
-                {t.city}
-              </span>
+              <div className="flex flex-col gap-1">
+                <span className="text-[#F5F0E8] text-sm tracking-wide">
+                  {r.author}
+                </span>
+                <span className="text-[#F5F0E8]/60 text-xs tracking-widest uppercase">
+                  Avis Google{r.relativeTime ? ` · ${r.relativeTime}` : ''}
+                </span>
+              </div>
             </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      ) : (
+        <div ref={quotesRef} className="relative z-10 mb-24">
+          <a
+            href={mapsUri}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-block text-[#F5F0E8]/70 text-lg font-light border-b border-[#C9A96E]/40 pb-1 hover:text-[#C9A96E] hover:border-[#C9A96E] transition-colors"
+          >
+            Découvrez les avis vérifiés de nos clients sur Google →
+          </a>
+        </div>
+      )}
 
       {/* Note Google + stats */}
       <div
@@ -161,32 +217,43 @@ export default function SceneSocialProof() {
                 </span>
               ))}
             </div>
-            <span className="text-[#F5F0E8]/30 text-xs tracking-widest uppercase">
+            <span className="text-[#F5F0E8]/60 text-xs tracking-widest uppercase">
               Note
             </span>
           </div>
 
-          <div className="flex items-center gap-3">
-            <span className="font-display text-[#C9A96E] text-5xl font-light">
-              4.9
-            </span>
-            <div className="flex flex-col gap-1">
-              <div className="flex gap-1">
-                {[1,2,3,4,5].map((star) => (
-                  <span
-                    key={star}
-                    data-star
-                    className="text-[#C9A96E] text-lg"
-                  >
-                    ★
-                  </span>
-                ))}
-              </div>
-              <span className="text-[#F5F0E8]/30 text-xs tracking-widest uppercase">
-                sur 5 — 48 avis
+          {hasReviews ? (
+            <div className="flex items-center gap-3">
+              <span className="font-display text-[#C9A96E] text-5xl font-light">
+                {reviews!.rating.toFixed(1)}
               </span>
+              <div className="flex flex-col gap-1">
+                <div className="flex gap-1">
+                  {[1,2,3,4,5].map((star) => (
+                    <span
+                      key={star}
+                      data-star
+                      className="text-[#C9A96E] text-lg"
+                    >
+                      ★
+                    </span>
+                  ))}
+                </div>
+                <span className="text-[#F5F0E8]/60 text-xs tracking-widest uppercase">
+                  sur 5 — {reviews!.userRatingCount} avis
+                </span>
+              </div>
             </div>
-          </div>
+          ) : (
+            <a
+              href={mapsUri}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[#F5F0E8]/70 text-sm hover:text-[#C9A96E] transition-colors underline underline-offset-2"
+            >
+              Voir notre fiche Google →
+            </a>
+          )}
         </div>
 
         {/* Séparateur vertical */}
@@ -199,7 +266,7 @@ export default function SceneSocialProof() {
               <span className="font-display text-[#C9A96E] text-3xl font-light">
                 {stat.value}
               </span>
-              <span className="text-[#F5F0E8]/30 text-xs tracking-widest uppercase">
+              <span className="text-[#F5F0E8]/60 text-xs tracking-widest uppercase">
                 {stat.label}
               </span>
             </div>
@@ -219,31 +286,3 @@ export default function SceneSocialProof() {
     </section>
   )
 }
-
-// ── Data ──────────────────────────────────────────────────────────────────────
-const TESTIMONIALS = [
-  {
-    quote: "Ponctuel, discret, d'une élégance rare. Notre transfert depuis l'aéroport de Montpellier s'est transformé en véritable moment de sérénité.",
-    author: 'Sophie M.',
-    role: 'Directrice commerciale',
-    city: 'Montpellier',
-  },
-  {
-    quote: "Nous faisons appel à ce service pour tous nos séminaires depuis deux ans. Fiabilité et professionnalisme à chaque trajet entre Nîmes et Paris.",
-    author: 'Laurent D.',
-    role: 'Responsable RH — Groupe Meridia',
-    city: 'Nîmes',
-  },
-  {
-    quote: "Le jour de notre mariage dans le Gard, tout était parfait. Le véhicule, l'attitude, les petites attentions. Un souvenir inoubliable.",
-    author: 'Camille & Thomas R.',
-    role: 'Particuliers',
-    city: 'Uzès, Gard',
-  },
-] as const
-
-const QUICK_STATS = [
-  { value: '100%', label: 'Ponctualité'    },
-  { value: '5★',   label: 'Confort'        },
-  { value: '0',    label: 'Incident'       },
-] as const
