@@ -355,9 +355,9 @@ export default function SceneContact({ greeting, contextKey }: SceneContactProps
     <section
       ref={sectionRef}
       id="contact"
-      className="relative min-h-screen w-full bg-[#0A0A0A] px-12 md:px-24 py-32 overflow-hidden"
+      className="relative min-h-dvh w-full bg-[#0A0A0A] px-6 sm:px-8 md:px-24 py-20 sm:py-24 md:py-32 overflow-hidden"
     >
-      <div className="absolute top-0 left-12 md:left-24 right-12 md:right-24 h-px bg-gradient-to-r from-transparent via-[#C9A96E]/30 to-transparent" />
+      <div className="absolute top-0 left-6 sm:left-8 md:left-24 right-6 sm:right-8 md:right-24 h-px bg-gradient-to-r from-transparent via-[#C9A96E]/30 to-transparent" />
 
       {/* Header */}
       <div className="relative z-10 mb-16">
@@ -369,11 +369,11 @@ export default function SceneContact({ greeting, contextKey }: SceneContactProps
         </div>
         <h2
           ref={titleRef}
-          className="font-display text-[#F5F0E8] text-5xl md:text-7xl font-light leading-tight max-w-2xl"
+          className="font-display text-[#F5F0E8] text-4xl sm:text-5xl md:text-7xl font-light leading-tight max-w-2xl"
         >
           Parlons de<br />
           <em className="text-[#C9A96E] not-italic">votre trajet</em>
-          <span className="block text-2xl md:text-3xl text-[#F5F0E8]/60 font-light mt-3 tracking-widest uppercase not-italic" style={{ fontFamily: 'var(--font-dm-sans)' }}>
+          <span className="block text-xl sm:text-2xl md:text-3xl text-[#F5F0E8]/60 font-light mt-3 tracking-widest uppercase not-italic" style={{ fontFamily: 'var(--font-dm-sans)' }}>
             Montpellier · Nîmes · Occitanie
           </span>
         </h2>
@@ -386,7 +386,7 @@ export default function SceneContact({ greeting, contextKey }: SceneContactProps
       >
 
         {/* Header chat */}
-        <div className="flex items-center gap-4 px-8 py-5 border-b border-[#F5F0E8]/10">
+        <div className="flex items-center gap-4 px-5 sm:px-8 py-5 border-b border-[#F5F0E8]/10">
           <div className="relative w-2.5 h-2.5 rounded-full bg-[#C9A96E]">
             <span className="absolute inset-0 rounded-full bg-[#C9A96E] animate-ping opacity-40" />
           </div>
@@ -400,7 +400,7 @@ export default function SceneContact({ greeting, contextKey }: SceneContactProps
             base légale du traitement est l'exécution de mesures
             précontractuelles (art. 6.1.b RGPD), pas le consentement — voir
             /politique-de-confidentialite. */}
-        <p className="px-8 py-3 border-b border-[#F5F0E8]/10 text-[#F5F0E8]/60 text-[11px] font-light leading-relaxed">
+        <p className="px-5 sm:px-8 py-3 border-b border-[#F5F0E8]/10 text-[#F5F0E8]/60 text-[11px] font-light leading-relaxed">
           En discutant avec Élia, vos informations sont transmises à nos prestataires techniques (IA, cartographie, email) pour établir votre devis.{' '}
           <a
             href="/politique-de-confidentialite"
@@ -417,7 +417,7 @@ export default function SceneContact({ greeting, contextKey }: SceneContactProps
           aria-live="polite"
           aria-atomic="false"
           aria-label="Conversation avec Élia"
-          className="flex flex-col gap-6 px-8 py-8 h-96 overflow-y-auto scroll-smooth"
+          className="flex flex-col gap-6 px-5 sm:px-8 py-8 h-72 sm:h-96 overflow-y-auto scroll-smooth"
           style={{
             scrollbarWidth: 'thin',
             scrollbarColor: 'rgba(201,169,110,0.3) transparent',
@@ -516,7 +516,7 @@ export default function SceneContact({ greeting, contextKey }: SceneContactProps
         </div>
 
         {/* Input */}
-        <div className="border-t border-[#F5F0E8]/10 px-8 py-5 flex items-center gap-4">
+        <div className="border-t border-[#F5F0E8]/10 px-5 sm:px-8 py-5 flex items-center gap-4">
           {/* Champ piège anti-bot : invisible et inatteignable pour un humain
               (hors flux de tabulation, masqué visuellement). Un bot qui
               remplit tous les champs du formulaire le remplira aussi. */}
@@ -555,7 +555,7 @@ export default function SceneContact({ greeting, contextKey }: SceneContactProps
             onClick={sendMessage}
             disabled={!input.trim() || loading || phase !== 'chat'}
             data-cursor
-            className="text-[#C9A96E] text-xs tracking-[0.3em] uppercase disabled:opacity-20 hover:text-[#F5F0E8] transition-colors duration-300"
+            className="p-2 -m-2 text-[#C9A96E] text-xs tracking-[0.3em] uppercase disabled:opacity-20 hover:text-[#F5F0E8] transition-colors duration-300"
           >
             Envoyer
           </button>
