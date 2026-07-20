@@ -12,7 +12,7 @@ const TIERS = [
  */
 export default function PricingSection() {
   return (
-    <section className="relative bg-[#0A0A0A] px-12 md:px-24 py-32 border-t border-[#F5F0E8]/10">
+    <section className="relative bg-[#0A0A0A] px-6 sm:px-8 md:px-24 py-20 sm:py-24 md:py-32 border-t border-[#F5F0E8]/10">
       <div className="flex items-center gap-4 mb-8">
         <div className="h-px w-16 bg-[#C9A96E]" />
         <span className="text-[#C9A96E] text-xs tracking-[0.5em] uppercase font-light">
@@ -20,7 +20,7 @@ export default function PricingSection() {
         </span>
       </div>
 
-      <h2 className="font-display text-[#F5F0E8] text-4xl md:text-5xl font-light mb-16 max-w-2xl">
+      <h2 className="font-display text-[#F5F0E8] text-3xl sm:text-4xl md:text-5xl font-light mb-16 max-w-2xl">
         Une tarification claire,<br />
         <em className="text-[#C9A96E] not-italic">confirmée avant chaque trajet.</em>
       </h2>
