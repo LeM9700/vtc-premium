@@ -1,8 +1,10 @@
 'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { gsap, ScrollTrigger } from '@/lib/gsap'
+import { track } from '@vercel/analytics'
+import { gsap, ScrollTrigger, prefersReducedMotion } from '@/lib/gsap'
 import { calculatePrice, formatPriceExplanation, TripType } from '@/lib/pricing'
+import type { ContextKey } from '@/lib/systemPrompt'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 interface Message {
@@ -23,51 +25,14 @@ interface CollectedData {
   name?:        string
   phone?:       string
   email?:       string
-  distanceKm?:  number
-  durationMin?: number
-  prixEstime?:  number
+  distanceKm?:  number | null
+  durationMin?: number | null
+  prixEstime?:  number | null
 }
 
 interface SceneContactProps {
-  greeting?:    string
-  contextNote?: string
-}
-
-// ── Prompt système ─────────────────────────────────────────────────────────────
-function buildSystemPrompt(contextNote?: string): string {
-  const contextBlock = contextNote ? `\nCONTEXTE :\n${contextNote}\n` : ''
-
-  return `Tu es l'assistant de réservation d'un service de chauffeur privé premium.
-Tu t'appelles "Élia". Tu es élégant, chaleureux, concis. Jamais de listes à puces. Jamais de markdown visible.
-${contextBlock}
-RÈGLE PRIORITAIRE :
-- Si le client pose une question sans rapport avec la réservation d'un trajet (météo, actualités, recettes, politique, code, blagues, sport, santé, traduction, etc.), réponds UNIQUEMENT : "Je suis Élia, votre assistante réservation. Je ne suis pas en mesure de répondre à cela — mais je serai ravie de vous préparer un devis pour votre prochain trajet."
-
-RÈGLES ABSOLUES :
-- Ne donne JAMAIS d'estimation de prix, de distance ou de durée — le calcul est automatique après collecte.
-- Si le client demande le prix, réponds : "Le tarif exact sera calculé et affiché dès que j'ai toutes vos informations."
-- Collecte les adresses COMPLÈTES avec ville (ex: "14 rue de la Paix, Montpellier").
-- Une seule question à la fois. Jamais de formulaire.
-
-Tu collectes ces informations dans l'ordre, UNE par UNE :
-1. Type de trajet (aéroport/gare, mise à disposition, événement, longue distance)
-2. Si mise à disposition : combien d'heures ?
-3. Adresse complète de départ (rue + ville)
-4. Adresse complète de destination (rue + ville) — sauf mise à disposition
-5. Date souhaitée
-6. Heure de prise en charge
-7. Nombre de passagers
-8. Options parmi : Grand bagage, Siège enfant, Accueil personnalisé, Eau & rafraîchissements, Discrétion totale
-9. Mode de paiement parmi : Carte bancaire, Espèces, Virement bancaire
-10. Prénom et nom
-11. Numéro de téléphone
-12. Email
-
-Quand tu as TOUTES les infos (les 12 points), envoie UN message de confirmation élégant, puis termine EXACTEMENT par ce bloc sur une ligne séparée :
-<COLLECTED>{"type":"airport|disposal|event|distance","departure":"...","destination":"...","date":"...","time":"...","passengers":"...","hours":4,"options":[],"payment":"...","name":"...","phone":"...","email":"..."}</COLLECTED>
-
-Pour "type" utilise uniquement : airport, disposal, event, distance.
-Pour mise à disposition, destination = "N/A".`
+  greeting?:   string
+  contextKey?: ContextKey
 }
 
 const SESSION_KEY  = 'elia_msg_count'
@@ -78,7 +43,7 @@ const INACTIVITY_MS = 7 * 60 * 1000
  * Chat avec Claude (Anthropic API) qui collecte les infos,
  * calcule le prix via OpenRouteService, envoie l'email via Resend.
  */
-export default function SceneContact({ greeting, contextNote }: SceneContactProps = {}) {
+export default function SceneContact({ greeting, contextKey }: SceneContactProps = {}) {
   const sectionRef    = useRef<HTMLElement>(null)
   const titleRef      = useRef<HTMLHeadingElement>(null)
   const chatRef       = useRef<HTMLDivElement>(null)
@@ -91,13 +56,17 @@ export default function SceneContact({ greeting, contextNote }: SceneContactProp
     content: greeting ?? 'Bonsoir. Je suis Élia, votre assistante de réservation. Pour quel type de trajet puis-je vous préparer un devis ?',
   }])
   const [input,     setInput]     = useState('')
+  const [honeypot,  setHoneypot]  = useState('') // champ piège anti-bot — jamais visible pour un humain
   const [loading,   setLoading]   = useState(false)
   const [collected, setCollected] = useState<CollectedData>({})
-  const [phase,     setPhase]     = useState<'chat' | 'calculating' | 'done' | 'expired' | 'limit'>('chat')
+  const [phase,     setPhase]     = useState<'chat' | 'calculating' | 'done' | 'expired' | 'limit' | 'failed'>('chat')
   const [messageCount, setMessageCount] = useState<number>(() => {
     if (typeof window === 'undefined') return 0
     return parseInt(sessionStorage.getItem(SESSION_KEY) ?? '0', 10)
   })
+  // Texte d'Élia en cours de réception (streaming) — affiché en direct, mais
+  // seul le message final complet rejoint `messages` (et donc le aria-live).
+  const [streamingText, setStreamingText] = useState<string | null>(null)
 
   // ── Inactivity timer ─────────────────────────────────────────────────────────
   const resetInactivityTimer = useCallback(() => {
@@ -120,7 +89,7 @@ export default function SceneContact({ greeting, contextNote }: SceneContactProp
     if (!el) return
     const isNearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 80
     if (isNearBottom) el.scrollTop = el.scrollHeight
-  }, [messages, loading])
+  }, [messages, loading, streamingText])
 
   // ── Start inactivity timer on mount, clean up on unmount ─────────────────────
   useEffect(() => {
@@ -134,6 +103,11 @@ export default function SceneContact({ greeting, contextNote }: SceneContactProp
     const title   = titleRef.current
     const chat    = chatRef.current
     if (!section || !title || !chat) return
+
+    if (prefersReducedMotion()) {
+      gsap.set([title, chat], { opacity: 1, y: 0 })
+      return
+    }
 
     const ctx = gsap.context(() => {
       gsap.from(title, {
@@ -149,37 +123,70 @@ export default function SceneContact({ greeting, contextNote }: SceneContactProp
     return () => ctx.revert()
   }, [])
 
-  // ── Appel Claude API ──────────────────────────────────────
-  const callClaude = useCallback(async (history: Message[], count: number): Promise<string> => {
+  // ── Appel Claude API en streaming (SSE) ────────────────────
+  // Le prompt système est construit côté serveur à partir de `contextKey`
+  // (clé whitelistée) — jamais de texte libre envoyé au serveur. Le bloc
+  // <COLLECTED> n'est jamais transmis brut : le serveur envoie directement
+  // les données déjà parsées dans l'event `done`.
+  const callClaudeStream = useCallback(async (
+    history: Message[],
+    onDelta: (text: string) => void
+  ): Promise<{
+    devisToken?: string
+    collected?: CollectedData
+    rateLimited: boolean
+    errored: boolean
+  }> => {
     const res = await fetch('/api/chat', {
       method:  'POST',
-      headers: {
-        'Content-Type':    'application/json',
-        'X-Message-Count': String(count),
-      },
-      body: JSON.stringify({ messages: history, system: buildSystemPrompt(contextNote) }),
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ messages: history, contextKey }),
     })
-    const data = await res.json()
-    return data.content ?? 'Une erreur est survenue.'
-  }, [contextNote])
 
-  // ── Extraction données collectées ─────────────────────────
-  const extractCollected = (text: string): CollectedData | null => {
-    const match = text.match(/<COLLECTED>([\s\S]*?)<\/COLLECTED>/)
-    if (!match) return null
-    try {
-      return JSON.parse(match[1])
-    } catch {
-      return null
+    if (res.status === 429) return { rateLimited: true, errored: false }
+    if (!res.ok || !res.body) return { rateLimited: false, errored: true }
+
+    const reader  = res.body.getReader()
+    const decoder = new TextDecoder()
+    let buffer = ''
+    let outcome: { devisToken?: string; collected?: CollectedData; errored: boolean } = { errored: false }
+
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) break
+      buffer += decoder.decode(value, { stream: true })
+
+      const frames = buffer.split('\n\n')
+      buffer = frames.pop() ?? '' // dernier fragment potentiellement incomplet
+
+      for (const frame of frames) {
+        const line = frame.trim()
+        if (!line.startsWith('data: ')) continue
+        try {
+          const evt = JSON.parse(line.slice(6))
+          if (evt.type === 'delta' && typeof evt.text === 'string') {
+            onDelta(evt.text)
+          } else if (evt.type === 'done') {
+            outcome = { devisToken: evt.devisToken, collected: evt.collected, errored: false }
+          } else if (evt.type === 'error') {
+            outcome = { errored: true }
+          }
+        } catch {
+          // frame malformée — ignorée
+        }
+      }
     }
-  }
+
+    return { ...outcome, rateLimited: false }
+  }, [contextKey])
 
   // ── Calcul distance + prix + envoi email ──────────────────
-  const processDevis = useCallback(async (data: CollectedData) => {
+  const processDevis = useCallback(async (data: CollectedData, devisToken?: string) => {
     setPhase('calculating')
 
-    let distanceKm  = 0
-    let durationMin = 0
+    let distanceKm:  number | null = null
+    let durationMin: number | null = null
+    let distanceError = false
 
     // Calcul distance si trajet point à point
     if (data.type !== 'disposal' && data.departure && data.destination !== 'N/A') {
@@ -192,21 +199,33 @@ export default function SceneContact({ greeting, contextNote }: SceneContactProp
             destination: data.destination,
           }),
         })
-        const dist = await res.json()
-        distanceKm  = dist.distanceKm  ?? 0
-        durationMin = dist.durationMin ?? 0
+        if (res.ok) {
+          const dist = await res.json()
+          if (dist.distanceKm) {
+            distanceKm  = dist.distanceKm
+            durationMin = dist.durationMin
+          } else {
+            distanceError = true
+          }
+        } else {
+          distanceError = true
+        }
       } catch {
-        console.error('Erreur calcul distance')
+        distanceError = true
       }
     }
 
-    const prix = calculatePrice({
+    // Ne jamais afficher/envoyer un prix calculé sur une distance à 0 par
+    // défaut : si le géocodage a échoué, le tarif reste "à confirmer".
+    const prix = distanceError ? null : calculatePrice({
       type:       data.type as TripType,
-      distanceKm,
+      distanceKm: distanceKm ?? 0,
       hours:      data.hours,
     })
 
-    const explication = formatPriceExplanation(prix, distanceKm, durationMin, data.type as TripType, data.hours)
+    const explication = distanceError
+      ? "Nous n'avons pas pu calculer automatiquement la distance de votre trajet. Notre équipe vous confirmera le tarif exact très rapidement."
+      : formatPriceExplanation(prix!, distanceKm ?? 0, durationMin ?? 0, data.type as TripType, data.hours)
 
     const finalData: CollectedData = {
       ...data,
@@ -217,17 +236,9 @@ export default function SceneContact({ greeting, contextNote }: SceneContactProp
 
     setCollected(finalData)
 
-    // Message de confirmation avec prix
-    const confirmMsg: Message = {
-      role:    'assistant',
-      content: `Parfait. Voici le récapitulatif de votre trajet :\n\n${explication}\n\nUn email de confirmation vient d'être envoyé à ${data.email}. Notre chauffeur vous contactera sous 2 heures pour confirmer votre réservation.`,
-    }
-
-    setMessages(prev => [...prev, confirmMsg])
-
-    // Envoi email
+    // Envoi email — bloquant : si ça échoue, on ne prétend pas avoir réussi.
     try {
-      await fetch('/api/devis', {
+      const res = await fetch('/api/devis', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({
@@ -235,17 +246,40 @@ export default function SceneContact({ greeting, contextNote }: SceneContactProp
           distanceKm,
           durationMin,
           prixEstime: prix,
+          token: devisToken,
         }),
       })
-    } catch {
-      console.error('Erreur envoi email')
-    }
 
-    setPhase('done')
+      if (!res.ok) {
+        track('devis_failed', { reason: 'api_error' })
+        setMessages(prev => [...prev, {
+          role:    'assistant',
+          content: "Une erreur est survenue lors de l'envoi de votre demande. Merci de nous appeler directement pour finaliser votre réservation.",
+        }])
+        setPhase('failed')
+        return
+      }
+
+      track('devis_completed', { type: data.type ?? 'unknown', distanceError })
+      setMessages(prev => [...prev, {
+        role:    'assistant',
+        content: `Parfait. Voici le récapitulatif de votre trajet :\n\n${explication}\n\nUn email de confirmation vient d'être envoyé à ${data.email}. Notre chauffeur vous contactera sous 2 heures pour confirmer votre réservation.`,
+      }])
+      setPhase('done')
+    } catch {
+      track('devis_failed', { reason: 'network_error' })
+      setMessages(prev => [...prev, {
+        role:    'assistant',
+        content: "Une erreur est survenue lors de l'envoi de votre demande. Merci de nous appeler directement pour finaliser votre réservation.",
+      }])
+      setPhase('failed')
+    }
   }, [])
 
   // ── Envoi message ─────────────────────────────────────────
   const sendMessage = useCallback(async () => {
+    if (honeypot) return // champ piège rempli → bot détecté, requête ignorée silencieusement
+
     const text = input.trim()
     if (!text || loading || phase !== 'chat') return
 
@@ -265,23 +299,41 @@ export default function SceneContact({ greeting, contextNote }: SceneContactProp
     const newCount = messageCount + 1
     setMessageCount(newCount)
     sessionStorage.setItem(SESSION_KEY, String(newCount))
+    if (newCount === 1) track('chat_started', { contextKey: contextKey ?? 'home' })
 
     try {
-      const reply    = await callClaude(newHistory, newCount)
-      const rawReply = reply.replace(/<COLLECTED>[\s\S]*?<\/COLLECTED>/, '').trim()
+      let liveText = ''
+      const { devisToken, collected, rateLimited, errored } = await callClaudeStream(newHistory, (delta) => {
+        setLoading(false)
+        liveText += delta
+        setStreamingText(liveText)
+      })
 
-      const assistantMsg: Message = { role: 'assistant', content: rawReply }
-      setMessages(prev => [...prev, assistantMsg])
+      setStreamingText(null)
 
-      // Vérifie si toutes les données sont collectées
-      const data = extractCollected(reply)
-      if (data) {
-        await processDevis(data)
+      if (rateLimited) {
+        setPhase('limit')
+        return
+      }
+
+      if (errored) {
+        setMessages(prev => [...prev, {
+          role:    'assistant',
+          content: 'Une erreur est survenue. Veuillez réessayer.',
+        }])
+        return
+      }
+
+      setMessages(prev => [...prev, { role: 'assistant', content: liveText.trim() }])
+
+      if (collected) {
+        await processDevis(collected, devisToken)
       } else if (newCount >= 20) {
         setPhase('limit')
       }
 
     } catch {
+      setStreamingText(null)
       setMessages(prev => [...prev, {
         role:    'assistant',
         content: 'Une erreur est survenue. Veuillez réessayer.',
@@ -290,7 +342,7 @@ export default function SceneContact({ greeting, contextNote }: SceneContactProp
       setLoading(false)
       inputRef.current?.focus()
     }
-  }, [input, loading, messages, phase, callClaude, processDevis, messageCount, resetInactivityTimer])
+  }, [input, honeypot, loading, messages, phase, callClaudeStream, processDevis, messageCount, resetInactivityTimer, contextKey])
 
   const onKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -321,7 +373,7 @@ export default function SceneContact({ greeting, contextNote }: SceneContactProp
         >
           Parlons de<br />
           <em className="text-[#C9A96E] not-italic">votre trajet</em>
-          <span className="block text-2xl md:text-3xl text-[#F5F0E8]/30 font-light mt-3 tracking-widest uppercase not-italic" style={{ fontFamily: 'var(--font-dm-sans)' }}>
+          <span className="block text-2xl md:text-3xl text-[#F5F0E8]/60 font-light mt-3 tracking-widest uppercase not-italic" style={{ fontFamily: 'var(--font-dm-sans)' }}>
             Montpellier · Nîmes · Occitanie
           </span>
         </h2>
@@ -343,9 +395,28 @@ export default function SceneContact({ greeting, contextNote }: SceneContactProp
           </span>
         </div>
 
+        {/* Information RGPD — affichée avant tout échange (art. 13 RGPD).
+            Note informative, pas un bandeau de consentement à cocher : la
+            base légale du traitement est l'exécution de mesures
+            précontractuelles (art. 6.1.b RGPD), pas le consentement — voir
+            /politique-de-confidentialite. */}
+        <p className="px-8 py-3 border-b border-[#F5F0E8]/10 text-[#F5F0E8]/60 text-[11px] font-light leading-relaxed">
+          En discutant avec Élia, vos informations sont transmises à nos prestataires techniques (IA, cartographie, email) pour établir votre devis.{' '}
+          <a
+            href="/politique-de-confidentialite"
+            className="text-[#C9A96E]/70 hover:text-[#C9A96E] underline underline-offset-2 transition-colors duration-300"
+          >
+            En savoir plus
+          </a>
+        </p>
+
         {/* Messages */}
         <div
           ref={messagesRef}
+          role="log"
+          aria-live="polite"
+          aria-atomic="false"
+          aria-label="Conversation avec Élia"
           className="flex flex-col gap-6 px-8 py-8 h-96 overflow-y-auto scroll-smooth"
           style={{
             scrollbarWidth: 'thin',
@@ -364,15 +435,16 @@ export default function SceneContact({ greeting, contextNote }: SceneContactProp
                     : 'text-right text-[#C9A96E]'
                 }`}
               >
+                <span className="sr-only">{msg.role === 'assistant' ? 'Élia : ' : 'Vous : '}</span>
                 {msg.content}
               </div>
             </div>
           ))}
 
-          {/* Indicateur de frappe */}
+          {/* Indicateur de frappe — avant le premier fragment reçu */}
           {loading && (
-            <div className="flex justify-start">
-              <div className="flex gap-1.5 items-center py-2">
+            <div className="flex justify-start" role="status" aria-label="Élia est en train de répondre…">
+              <div className="flex gap-1.5 items-center py-2" aria-hidden="true">
                 {[0, 1, 2].map(i => (
                   <span
                     key={i}
@@ -384,10 +456,20 @@ export default function SceneContact({ greeting, contextNote }: SceneContactProp
             </div>
           )}
 
+          {/* Réponse en cours de réception — texte final annoncé une seule
+              fois via le log aria-live une fois le flux terminé, pas ici. */}
+          {streamingText !== null && (
+            <div className="flex justify-start" aria-hidden="true">
+              <div className="max-w-xs md:max-w-sm text-sm font-light leading-relaxed whitespace-pre-line text-[#F5F0E8]/80">
+                {streamingText}
+              </div>
+            </div>
+          )}
+
           {/* Phase calcul */}
           {phase === 'calculating' && (
             <div className="flex justify-start">
-              <p className="text-[#F5F0E8]/40 text-xs tracking-widest uppercase animate-pulse">
+              <p className="text-[#F5F0E8]/60 text-xs tracking-widest uppercase animate-pulse">
                 Calcul de votre itinéraire...
               </p>
             </div>
@@ -407,13 +489,55 @@ export default function SceneContact({ greeting, contextNote }: SceneContactProp
               </p>
             </div>
           )}
+
+          {/* Phase échec envoi */}
+          {phase === 'failed' && (
+            <div className="flex justify-start">
+              <p className="text-[#F5F0E8]/60 text-sm font-light leading-relaxed max-w-xs md:max-w-sm">
+                Appelez-nous directement pour finaliser votre réservation :{' '}
+                <a
+                  href="tel:0783699229"
+                  className="text-[#C9A96E] hover:text-[#F5F0E8] transition-colors duration-300 underline underline-offset-2"
+                >
+                  07 83 69 92 29
+                </a>
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Annonce des changements de phase pour lecteurs d'écran (hors log) */}
+        <div role="status" aria-live="assertive" className="sr-only">
+          {phase === 'calculating' && 'Calcul de votre devis en cours.'}
+          {phase === 'limit' && 'Limite de messages atteinte pour cette session. Appelez le 07 83 69 92 29.'}
+          {phase === 'expired' && 'Votre session a expiré après 7 minutes d’inactivité.'}
+          {phase === 'failed' && 'Échec de l’envoi de votre demande. Appelez le 07 83 69 92 29.'}
+          {phase === 'done' && 'Votre demande de devis a été envoyée avec succès.'}
         </div>
 
         {/* Input */}
         <div className="border-t border-[#F5F0E8]/10 px-8 py-5 flex items-center gap-4">
+          {/* Champ piège anti-bot : invisible et inatteignable pour un humain
+              (hors flux de tabulation, masqué visuellement). Un bot qui
+              remplit tous les champs du formulaire le remplira aussi. */}
+          <input
+            type="text"
+            name="message2"
+            value={honeypot}
+            onChange={e => setHoneypot(e.target.value)}
+            tabIndex={-1}
+            autoComplete="off"
+            aria-hidden="true"
+            className="absolute w-0 h-0 opacity-0 pointer-events-none -z-10"
+          />
+          <label htmlFor="elia-chat-input" className="sr-only">
+            Votre réponse à Élia
+          </label>
           <input
             ref={inputRef}
+            id="elia-chat-input"
             type="text"
+            autoComplete="off"
             value={input}
             onChange={e => setInput(e.target.value)}
             onKeyDown={onKeyDown}
@@ -421,10 +545,11 @@ export default function SceneContact({ greeting, contextNote }: SceneContactProp
               phase === 'done'    ? 'Demande envoyée ✓' :
               phase === 'limit'   ? 'Session limitée — appelez le 07 83 69 92 29' :
               phase === 'expired' ? 'Session expirée — rechargez la page' :
+              phase === 'failed'  ? 'Échec de l’envoi — appelez le 07 83 69 92 29' :
               'Votre réponse...'
             }
             disabled={loading || phase !== 'chat'}
-            className="flex-1 bg-transparent outline-none text-[#F5F0E8] text-sm font-light placeholder:text-[#F5F0E8]/20 disabled:opacity-40"
+            className="flex-1 bg-transparent outline-none text-[#F5F0E8] text-sm font-light placeholder:text-[#F5F0E8]/40 disabled:opacity-40"
           />
           <button
             onClick={sendMessage}
