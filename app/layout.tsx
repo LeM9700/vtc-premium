@@ -90,7 +90,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             visible que dans le footer ou en session de chat limitée/expirée. */}
         <a
           href="tel:0783699229"
-          className="md:hidden fixed bottom-4 right-4 z-[9990] flex items-center gap-2 bg-[#C9A96E] text-[#0A0A0A] px-5 py-3 rounded-full text-xs font-medium tracking-widest uppercase shadow-lg"
+          className="md:hidden fixed bottom-[calc(1rem+env(safe-area-inset-bottom))] right-4 z-[9990] flex items-center gap-2 bg-[#C9A96E] text-[#0A0A0A] px-5 py-3 rounded-full text-xs font-medium tracking-widest uppercase shadow-lg"
         >
           Appeler
         </a>
