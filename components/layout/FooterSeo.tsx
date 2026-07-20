@@ -20,8 +20,8 @@ export default function FooterSeo() {
   const pathname = usePathname()
 
   return (
-    <footer className="relative bg-[#0A0A0A] px-12 md:px-24 py-16 border-t border-[#F5F0E8]/10">
-      <div className="absolute top-0 left-12 md:left-24 right-12 md:right-24 h-px bg-gradient-to-r from-transparent via-[#C9A96E]/20 to-transparent" />
+    <footer className="relative bg-[#0A0A0A] px-6 sm:px-8 md:px-24 py-16 border-t border-[#F5F0E8]/10">
+      <div className="absolute top-0 left-6 sm:left-8 md:left-24 right-6 sm:right-8 md:right-24 h-px bg-gradient-to-r from-transparent via-[#C9A96E]/20 to-transparent" />
 
       <div className="flex flex-col md:flex-row gap-12 md:gap-24">
 
@@ -36,7 +36,7 @@ export default function FooterSeo() {
                 <Link
                   href={href}
                   aria-current={pathname === href ? 'page' : undefined}
-                  className="text-[#F5F0E8]/60 text-sm tracking-wide font-light hover:text-[#C9A96E] transition-colors duration-300 aria-[current=page]:text-[#C9A96E]"
+                  className="inline-block p-2 -m-2 text-[#F5F0E8]/60 text-sm tracking-wide font-light hover:text-[#C9A96E] transition-colors duration-300 aria-[current=page]:text-[#C9A96E]"
                 >
                   {label}
                 </Link>
@@ -59,7 +59,7 @@ export default function FooterSeo() {
                 <Link
                   href={href}
                   aria-current={pathname === href ? 'page' : undefined}
-                  className="text-[#F5F0E8]/60 text-sm tracking-wide font-light hover:text-[#C9A96E] transition-colors duration-300 aria-[current=page]:text-[#C9A96E]"
+                  className="inline-block p-2 -m-2 text-[#F5F0E8]/60 text-sm tracking-wide font-light hover:text-[#C9A96E] transition-colors duration-300 aria-[current=page]:text-[#C9A96E]"
                 >
                   {label}
                 </Link>
@@ -77,13 +77,13 @@ export default function FooterSeo() {
         <nav aria-label="Informations légales" className="flex gap-6">
           <Link
             href="/mentions-legales"
-            className="text-[#F5F0E8]/60 text-xs tracking-widest uppercase hover:text-[#C9A96E] transition-colors duration-300"
+            className="inline-block p-2 -m-2 text-[#F5F0E8]/60 text-xs tracking-widest uppercase hover:text-[#C9A96E] transition-colors duration-300"
           >
             Mentions légales
           </Link>
           <Link
             href="/politique-de-confidentialite"
-            className="text-[#F5F0E8]/60 text-xs tracking-widest uppercase hover:text-[#C9A96E] transition-colors duration-300"
+            className="inline-block p-2 -m-2 text-[#F5F0E8]/60 text-xs tracking-widest uppercase hover:text-[#C9A96E] transition-colors duration-300"
           >
             Politique de confidentialité
           </Link>
