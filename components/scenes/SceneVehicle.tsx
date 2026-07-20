@@ -152,7 +152,7 @@ export default function SceneVehicle() {
       <div className="absolute inset-0 z-10 bg-gradient-to-t from-[#0A0A0A]/60 to-transparent" />
 
       {/* Contenu textuel gauche */}
-      <div className="absolute left-6 sm:left-8 md:left-12 lg:left-24 top-1/2 -translate-y-1/2 z-20 max-w-[75vw] sm:max-w-sm">
+      <div className="absolute left-6 sm:left-8 md:left-24 top-1/2 -translate-y-1/2 z-20 max-w-[75vw] sm:max-w-sm">
 
         {/* Label */}
         <div
