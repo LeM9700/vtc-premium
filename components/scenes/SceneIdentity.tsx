@@ -116,11 +116,11 @@ export default function SceneIdentity() {
   return (
     <section
       ref={sectionRef}
-      className="relative min-h-screen w-full bg-[#0A0A0A] flex flex-col justify-center px-12 md:px-24 py-32 overflow-hidden"
+      className="relative min-h-dvh w-full bg-[#0A0A0A] flex flex-col justify-center px-6 sm:px-8 md:px-24 py-20 sm:py-24 md:py-32 overflow-hidden"
     >
 
       {/* Ligne décorative verticale gauche */}
-      <div className="absolute left-12 md:left-24 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-[#C9A96E]/20 to-transparent" />
+      <div className="absolute left-6 sm:left-8 md:left-24 top-0 bottom-0 w-px bg-gradient-to-b from-transparent via-[#C9A96E]/20 to-transparent" />
 
       {/* Label section */}
       <div className="flex items-center gap-4 mb-16">
@@ -144,7 +144,7 @@ export default function SceneIdentity() {
 
         <h2
           ref={manifestRef}
-          className="font-display text-[#F5F0E8] text-4xl md:text-6xl xl:text-7xl font-light leading-tight opacity-0"
+          className="font-display text-[#F5F0E8] text-3xl sm:text-4xl md:text-6xl xl:text-7xl font-light leading-tight opacity-0"
         >
           Nous ne proposons pas<br />
           un simple trajet —<br />
