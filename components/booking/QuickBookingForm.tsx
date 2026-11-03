@@ -139,9 +139,23 @@ export default function QuickBookingForm() {
     </div>,
     <div key="who" className="space-y-4">
       <h3 className="text-2xl">Comment vous joindre ?</h3>
-      <input className="field" required placeholder="Prénom et nom" value={data.name} onChange={event => update('name', event.target.value)} />
-      <input className="field" required type="email" placeholder="Email" value={data.email} onChange={event => update('email', event.target.value)} />
-      <input className="field" required type="tel" placeholder="Téléphone" value={data.phone} onChange={event => update('phone', event.target.value)} />
+      <input className="field" required autoComplete="name" placeholder="Prénom et nom" value={data.name} onChange={event => update('name', event.target.value)} />
+      <input className="field" required autoComplete="email" inputMode="email" type="email" maxLength={254} placeholder="Email" value={data.email} onChange={event => update('email', event.target.value)} />
+      <input
+        className="field"
+        required
+        autoComplete="tel"
+        inputMode="tel"
+        type="tel"
+        minLength={8}
+        maxLength={30}
+        pattern="[-0-9+(). ]{8,30}"
+        title="Saisissez un numéro valide, par exemple 06 12 34 56 78."
+        placeholder="Téléphone (ex. 06 12 34 56 78)"
+        value={data.phone}
+        onChange={event => update('phone', event.target.value)}
+      />
+      <p className="text-sm text-white/55">L’email et le format du numéro seront vérifiés avant l’envoi.</p>
     </div>,
   ]
 
