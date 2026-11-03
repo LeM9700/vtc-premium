@@ -15,7 +15,7 @@ const FAQ_ITEMS = [
   {
     question: 'Combien coûte une mise à disposition professionnelle ?',
     answer:
-      "Comptez environ 320€ pour une demi-journée (4h) et 490€ pour une journée complète (7h), soit un tarif dégressif entre 70€ et 80€/h selon la durée. Au-delà de 7h, le tarif est de 100€/h. Élia vous confirme le montant exact selon vos besoins.",
+      "La mise à disposition est facturée 70€/h, sans majoration de nuit, de dimanche ou de jour férié.",
   },
   {
     question: 'Le chauffeur respecte-t-il la confidentialité de mes échanges professionnels ?',

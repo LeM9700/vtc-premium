@@ -10,7 +10,7 @@ const FAQ_ITEMS = [
   {
     question: 'Combien coûte un trajet longue distance depuis Montpellier ou Nîmes ?',
     answer:
-      "Au-delà de 10 km, le tarif est de 2,50€/km, calculé sur l'itinéraire réel de votre trajet. Élia vous confirme le montant exact avant validation de votre réservation, sans surprise à l'arrivée.",
+      "Le tarif est de 2€/km avec un minimum de 20€, calculé sur l'itinéraire routier réel. La validation envoie une demande au chauffeur.",
   },
   {
     question: 'Desservez-vous Paris, Lyon, Marseille, Monaco et Genève ?',
@@ -20,7 +20,7 @@ const FAQ_ITEMS = [
   {
     question: 'Le tarif est-il fixe dès la réservation ?',
     answer:
-      "Oui, le prix est arrêté dès la confirmation de votre devis par Élia. Aucune surprise à l'arrivée, quelle que soit la durée réelle du trajet.",
+      "Oui, le tarif est calculé par l’API lors de la demande et la course est confirmée après acceptation du chauffeur.",
   },
   {
     question: 'Peut-on faire des arrêts pendant le trajet longue distance ?',
@@ -113,7 +113,7 @@ export default function LongueDistanceOccitanie() {
           },
           {
             title: 'Tarif fixe à la réservation',
-            body:  'Le prix est arrêté dès la confirmation. Aucune surprise à l\'arrivée, quelle que soit la durée du trajet.',
+            body:  'Le prix est calculé à 2€/km, avec un minimum de 20€, puis confirmé avec la course par le chauffeur.',
           },
         ]}
       />

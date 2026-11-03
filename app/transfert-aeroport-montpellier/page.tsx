@@ -10,7 +10,7 @@ const FAQ_ITEMS = [
   {
     question: 'Combien coûte un transfert aéroport Montpellier ?',
     answer:
-      "Le tarif dépend de la distance entre l'aéroport et votre adresse : forfait de 20€ pour moins de 5 km, 25€ jusqu'à 10 km, puis 2,50€/km au-delà. Élia calcule le tarif exact dès que vous indiquez votre adresse.",
+      "Le tarif est de 2€/km avec un minimum de 20€, calculé sur l’itinéraire routier réel entre l’aéroport et votre adresse.",
   },
   {
     question: 'Suivez-vous mon vol en cas de retard ?',

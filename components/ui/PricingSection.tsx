@@ -1,8 +1,8 @@
 const TIERS = [
-  { label: 'Trajet court',        detail: 'Moins de 5 km',         price: '20€',        note: 'Forfait' },
-  { label: 'Trajet moyen',        detail: 'Jusqu\'à 10 km',        price: '25€',        note: 'Forfait' },
-  { label: 'Trajet long',         detail: 'Au-delà de 10 km',      price: '2,50€/km',   note: 'Au kilomètre' },
-  { label: 'Mise à disposition',  detail: 'Demi-journée à journée', price: 'Dès 70€/h',  note: 'Selon la durée' },
+  { label: 'Tous les trajets', detail: 'Distance routière calculée', price: '2€/km', note: 'Tarif unique' },
+  { label: 'Minimum course', detail: 'Quelle que soit la distance', price: '20€', note: 'Minimum' },
+  { label: 'Mise à disposition', detail: 'Calculée à la minute', price: '70€/h', note: 'Tarif horaire' },
+  { label: 'Nuit · dimanche · férié', detail: 'Aucune majoration', price: '+0€', note: 'Sans supplément' },
 ] as const
 
 /**
@@ -38,7 +38,7 @@ export default function PricingSection() {
 
       <p className="text-[#F5F0E8]/60 text-sm font-light mt-10 max-w-2xl">
         Le tarif exact de votre trajet est calculé automatiquement par Élia à partir de vos adresses
-        réelles, et confirmé avant toute réservation. Ces montants sont indicatifs.
+        réelles. Votre validation envoie une demande ; la course est confirmée uniquement après acceptation du chauffeur.
       </p>
     </section>
   )

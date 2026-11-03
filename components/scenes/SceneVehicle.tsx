@@ -218,7 +218,7 @@ export default function SceneVehicle() {
 
 // ── Data — à adapter selon le véhicule réel ───────────────────────────────────
 const SPECS = [
-  { value: 'Mercedes Classe E / S',    label: 'Véhicule'      },
+  { value: 'BYD',                      label: 'Véhicule'      },
   { value: '4 passagers',              label: 'Capacité'      },
   { value: 'Climatisation bi-zone',    label: 'Confort'       },
   { value: 'WiFi & chargeurs USB-C',   label: 'Connectivité'  },

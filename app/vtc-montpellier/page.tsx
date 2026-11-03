@@ -11,7 +11,7 @@ const FAQ_ITEMS = [
   {
     question: 'Combien coûte un VTC à Montpellier ?',
     answer:
-      "Pour un trajet court dans Montpellier (moins de 5 km), comptez un forfait de 20€. Jusqu'à 10 km, le tarif est de 25€. Au-delà, il est de 2,50€/km. Le tarif exact est calculé automatiquement par Élia une fois votre trajet précisé.",
+      "Le tarif est de 2€/km avec un minimum de 20€. Il est calculé côté serveur sur l’itinéraire routier réel, sans majoration de nuit, dimanche ou jour férié.",
   },
   {
     question: 'Desservez-vous l\'Aéroport Montpellier-Méditerranée ?',

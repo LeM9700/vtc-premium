@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, useCallback } from 'react'
 import { track } from '@vercel/analytics'
 import { gsap, ScrollTrigger, prefersReducedMotion } from '@/lib/gsap'
-import { calculatePrice, formatPriceExplanation, TripType } from '@/lib/pricing'
+import type { TripType } from '@/lib/pricing'
 import type { ContextKey } from '@/lib/systemPrompt'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -58,7 +58,6 @@ export default function SceneContact({ greeting, contextKey }: SceneContactProps
   const [input,     setInput]     = useState('')
   const [honeypot,  setHoneypot]  = useState('') // champ piège anti-bot — jamais visible pour un humain
   const [loading,   setLoading]   = useState(false)
-  const [collected, setCollected] = useState<CollectedData>({})
   const [phase,     setPhase]     = useState<'chat' | 'calculating' | 'done' | 'expired' | 'limit' | 'failed'>('chat')
   const [messageCount, setMessageCount] = useState<number>(() => {
     if (typeof window === 'undefined') return 0
@@ -184,68 +183,13 @@ export default function SceneContact({ greeting, contextKey }: SceneContactProps
   const processDevis = useCallback(async (data: CollectedData, devisToken?: string) => {
     setPhase('calculating')
 
-    let distanceKm:  number | null = null
-    let durationMin: number | null = null
-    let distanceError = false
-
-    // Calcul distance si trajet point à point
-    if (data.type !== 'disposal' && data.departure && data.destination !== 'N/A') {
-      try {
-        const res = await fetch('/api/distance', {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({
-            departure:   data.departure,
-            destination: data.destination,
-          }),
-        })
-        if (res.ok) {
-          const dist = await res.json()
-          if (dist.distanceKm) {
-            distanceKm  = dist.distanceKm
-            durationMin = dist.durationMin
-          } else {
-            distanceError = true
-          }
-        } else {
-          distanceError = true
-        }
-      } catch {
-        distanceError = true
-      }
-    }
-
-    // Ne jamais afficher/envoyer un prix calculé sur une distance à 0 par
-    // défaut : si le géocodage a échoué, le tarif reste "à confirmer".
-    const prix = distanceError ? null : calculatePrice({
-      type:       data.type as TripType,
-      distanceKm: distanceKm ?? 0,
-      hours:      data.hours,
-    })
-
-    const explication = distanceError
-      ? "Nous n'avons pas pu calculer automatiquement la distance de votre trajet. Notre équipe vous confirmera le tarif exact très rapidement."
-      : formatPriceExplanation(prix!, distanceKm ?? 0, durationMin ?? 0, data.type as TripType, data.hours)
-
-    const finalData: CollectedData = {
-      ...data,
-      distanceKm,
-      durationMin,
-      prixEstime: prix,
-    }
-
-    setCollected(finalData)
-
     // Envoi email — bloquant : si ça échoue, on ne prétend pas avoir réussi.
     try {
       const res = await fetch('/api/devis', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({
-          ...finalData,
-          distanceKm,
-          durationMin,
-          prixEstime: prix,
+          ...data,
           token: devisToken,
         }),
       })
@@ -260,10 +204,11 @@ export default function SceneContact({ greeting, contextKey }: SceneContactProps
         return
       }
 
-      track('devis_completed', { type: data.type ?? 'unknown', distanceError })
+      const result = await res.json() as { reference: string; priceEur: number }
+      track('request_submitted', { type: data.type ?? 'unknown' })
       setMessages(prev => [...prev, {
         role:    'assistant',
-        content: `Parfait. Voici le récapitulatif de votre trajet :\n\n${explication}\n\nUn email de confirmation vient d'être envoyé à ${data.email}. Notre chauffeur vous contactera sous 2 heures pour confirmer votre réservation.`,
+        content: `Votre demande ${result.reference} a bien été envoyée. Tarif estimé : ${result.priceEur.toFixed(2)} €. Elle sera confirmée uniquement après acceptation du chauffeur.`,
       }])
       setPhase('done')
     } catch {
