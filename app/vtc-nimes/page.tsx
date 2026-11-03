@@ -3,6 +3,30 @@ import SceneHero         from '@/components/scenes/SceneHero'
 import SceneServices     from '@/components/scenes/SceneServices'
 import SceneContact      from '@/components/scenes/SceneContact'
 import SectionHighlights from '@/components/ui/SectionHighlights'
+import FAQSection        from '@/components/ui/FAQSection'
+import ErrorBoundary     from '@/components/ui/ErrorBoundary'
+import { buildBreadcrumbJsonLd } from '@/lib/breadcrumb'
+
+const FAQ_ITEMS = [
+  {
+    question: 'Combien coûte un VTC à Nîmes ?',
+    answer:
+      "Pour un trajet court dans Nîmes (moins de 5 km), comptez un forfait de 20€. Jusqu'à 10 km, le tarif est de 25€. Au-delà, il est de 2,50€/km. Le tarif exact est calculé automatiquement par Élia une fois votre trajet précisé.",
+  },
+  {
+    question: 'Desservez-vous l\'Aéroport Nîmes-Camargue ?',
+    answer: 'Oui, avec suivi de vol et accueil personnalisé dès la sortie des arrivées.',
+  },
+  {
+    question: 'Puis-je réserver un VTC la nuit à Nîmes ?',
+    answer: 'Oui, le service est disponible 24h/24 et 7j/7, y compris pendant les férias et événements nîmois.',
+  },
+  {
+    question: 'Comment fonctionne la réservation avec Élia ?',
+    answer:
+      "Élia vous pose quelques questions dans le chat (adresses, date, heure, passagers), calcule automatiquement le tarif, puis vous envoie un email de confirmation. Notre chauffeur vous recontacte sous 2 heures.",
+  },
+]
 
 export const metadata: Metadata = {
   title: 'VTC Nîmes | Chauffeur Privé Gard',
@@ -23,9 +47,22 @@ const jsonLd = {
   name: 'VTCLAND — VTC Nîmes',
   description: "Chauffeur privé à Nîmes et dans le Gard. Disponible 24h/24.",
   url: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vtcland.fr'}/vtc-nimes`,
+  telephone: '+33783699229',
   serviceArea: { '@type': 'City', name: 'Nîmes' },
   areaServed:  { '@type': 'AdministrativeArea', name: 'Gard' },
+  address: { '@type': 'PostalAddress', addressLocality: 'Nîmes', addressRegion: 'Occitanie', addressCountry: 'FR' },
+  geo: { '@type': 'GeoCoordinates', latitude: 43.8367, longitude: 4.3601 },
+  priceRange: '€€€',
+  openingHoursSpecification: {
+    '@type': 'OpeningHoursSpecification',
+    dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+    opens: '00:00',
+    closes: '23:59',
+  },
+  provider: { '@type': 'Organization', name: 'VTCLAND', url: process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vtcland.fr' },
 }
+
+const breadcrumbJsonLd = buildBreadcrumbJsonLd('VTC Nîmes', '/vtc-nimes')
 
 export default function VtcNimes() {
   return (
@@ -34,8 +71,14 @@ export default function VtcNimes() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
+      <ErrorBoundary>
       <SceneHero
         heroImageSrc="/images/hero-vtc-nimes.webp"
+        imageAlt="Chauffeur privé VTCLAND à Nîmes, Gard"
         title={
           <>
             VTC Nîmes<br />
@@ -71,10 +114,12 @@ export default function VtcNimes() {
         ]}
       />
       <SceneServices />
+      <FAQSection items={FAQ_ITEMS} title="Questions fréquentes — VTC Nîmes" />
       <SceneContact
         greeting="Bonsoir. Je suis Élia, votre assistante de réservation pour Nîmes et le Gard. Pour quel type de trajet puis-je vous préparer un devis ?"
-        contextNote="Le client navigue depuis la page VTC Nîmes (Gard). S'il ne précise pas de ville, suppose Nîmes par défaut."
+        contextKey="vtc-nimes"
       />
+      </ErrorBoundary>
     </main>
   )
 }

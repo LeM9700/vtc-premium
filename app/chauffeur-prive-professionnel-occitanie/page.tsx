@@ -2,6 +2,32 @@ import type { Metadata } from 'next'
 import SceneHero         from '@/components/scenes/SceneHero'
 import SceneContact      from '@/components/scenes/SceneContact'
 import SectionHighlights from '@/components/ui/SectionHighlights'
+import FAQSection        from '@/components/ui/FAQSection'
+import ErrorBoundary     from '@/components/ui/ErrorBoundary'
+import { buildBreadcrumbJsonLd } from '@/lib/breadcrumb'
+
+const FAQ_ITEMS = [
+  {
+    question: 'Proposez-vous la facturation entreprise ?',
+    answer:
+      "Oui. Compte client, factures avec mention de TVA et reporting mensuel sont disponibles pour simplifier l'intégration à votre gestion de frais professionnels.",
+  },
+  {
+    question: 'Combien coûte une mise à disposition professionnelle ?',
+    answer:
+      "Comptez environ 320€ pour une demi-journée (4h) et 490€ pour une journée complète (7h), soit un tarif dégressif entre 70€ et 80€/h selon la durée. Au-delà de 7h, le tarif est de 100€/h. Élia vous confirme le montant exact selon vos besoins.",
+  },
+  {
+    question: 'Le chauffeur respecte-t-il la confidentialité de mes échanges professionnels ?',
+    answer:
+      "Oui, discrétion absolue. Votre chauffeur est soumis à une stricte obligation de réserve sur tout ce qui se dit ou se fait à bord du véhicule.",
+  },
+  {
+    question: 'Peut-on réserver un chauffeur pour plusieurs jours consécutifs (séminaire) ?',
+    answer:
+      "Oui, la mise à disposition peut être organisée sur plusieurs jours pour un séminaire ou un déplacement professionnel prolongé. Précisez votre programme à Élia pour un devis adapté.",
+  },
+]
 
 export const metadata: Metadata = {
   title: 'Chauffeur Privé Professionnel Occitanie',
@@ -22,9 +48,22 @@ const jsonLd = {
   name: "VTCLAND — Chauffeur Professionnel Occitanie",
   description: "Transport d'affaires et mise à disposition pour les professionnels en Occitanie.",
   url: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vtcland.fr'}/chauffeur-prive-professionnel-occitanie`,
+  telephone: '+33783699229',
   serviceType: "Transport professionnel",
   areaServed: { '@type': 'AdministrativeArea', name: 'Occitanie' },
+  address: { '@type': 'PostalAddress', addressRegion: 'Occitanie', addressCountry: 'FR' },
+  geo: { '@type': 'GeoCoordinates', latitude: 43.6323851, longitude: 3.9162285 },
+  priceRange: '€€€',
+  openingHoursSpecification: {
+    '@type': 'OpeningHoursSpecification',
+    dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+    opens: '00:00',
+    closes: '23:59',
+  },
+  provider: { '@type': 'Organization', name: 'VTCLAND', url: process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vtcland.fr' },
 }
+
+const breadcrumbJsonLd = buildBreadcrumbJsonLd('Chauffeur Privé Professionnel Occitanie', '/chauffeur-prive-professionnel-occitanie')
 
 export default function ChauffeurProOccitanie() {
   return (
@@ -33,8 +72,14 @@ export default function ChauffeurProOccitanie() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
+      <ErrorBoundary>
       <SceneHero
         heroImageSrc="/images/hero-chauffeur-pro.webp"
+        imageAlt="Chauffeur privé professionnel VTCLAND pour mise à disposition en Occitanie"
         title={
           <>
             Transport<br />
@@ -69,10 +114,12 @@ export default function ChauffeurProOccitanie() {
           },
         ]}
       />
+      <FAQSection items={FAQ_ITEMS} title="Questions fréquentes — Chauffeur Privé Professionnel" />
       <SceneContact
         greeting="Bonsoir. Je vous prépare un devis pour une mise à disposition professionnelle en Occitanie. Combien d'heures de mise à disposition souhaitez-vous ?"
-        contextNote="Le type de trajet est 'disposal'. Ne demande pas le type : commence directement par le nombre d'heures souhaité."
+        contextKey="chauffeur-prive-professionnel-occitanie"
       />
+      </ErrorBoundary>
     </main>
   )
 }

@@ -3,6 +3,31 @@ import SceneHero         from '@/components/scenes/SceneHero'
 import SceneServices     from '@/components/scenes/SceneServices'
 import SceneContact      from '@/components/scenes/SceneContact'
 import SectionHighlights from '@/components/ui/SectionHighlights'
+import FAQSection        from '@/components/ui/FAQSection'
+import ErrorBoundary     from '@/components/ui/ErrorBoundary'
+import { buildBreadcrumbJsonLd } from '@/lib/breadcrumb'
+
+const FAQ_ITEMS = [
+  {
+    question: 'Combien coûte un VTC à Montpellier ?',
+    answer:
+      "Pour un trajet court dans Montpellier (moins de 5 km), comptez un forfait de 20€. Jusqu'à 10 km, le tarif est de 25€. Au-delà, il est de 2,50€/km. Le tarif exact est calculé automatiquement par Élia une fois votre trajet précisé.",
+  },
+  {
+    question: 'Desservez-vous l\'Aéroport Montpellier-Méditerranée ?',
+    answer:
+      "Oui, avec suivi de vol en temps réel : votre chauffeur adapte l'heure de prise en charge en cas de retard, sans que vous ayez à le signaler.",
+  },
+  {
+    question: 'Puis-je réserver un VTC la nuit à Montpellier ?',
+    answer: 'Oui, le service est disponible 24h/24 et 7j/7, y compris pour les vols de nuit.',
+  },
+  {
+    question: 'Comment fonctionne la réservation avec Élia ?',
+    answer:
+      "Élia vous pose quelques questions dans le chat (adresses, date, heure, passagers), calcule automatiquement le tarif, puis vous envoie un email de confirmation. Notre chauffeur vous recontacte sous 2 heures.",
+  },
+]
 
 export const metadata: Metadata = {
   title: 'VTC Montpellier | Chauffeur Privé Hérault',
@@ -23,9 +48,22 @@ const jsonLd = {
   name: 'VTCLAND — VTC Montpellier',
   description: "Chauffeur privé à Montpellier et en Hérault. Disponible 24h/24.",
   url: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vtcland.fr'}/vtc-montpellier`,
+  telephone: '+33783699229',
   serviceArea: { '@type': 'City', name: 'Montpellier' },
   areaServed:  { '@type': 'AdministrativeArea', name: 'Hérault' },
+  address: { '@type': 'PostalAddress', addressLocality: 'Montpellier', addressRegion: 'Occitanie', addressCountry: 'FR' },
+  geo: { '@type': 'GeoCoordinates', latitude: 43.6323851, longitude: 3.9162285 },
+  priceRange: '€€€',
+  openingHoursSpecification: {
+    '@type': 'OpeningHoursSpecification',
+    dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+    opens: '00:00',
+    closes: '23:59',
+  },
+  provider: { '@type': 'Organization', name: 'VTCLAND', url: process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vtcland.fr' },
 }
+
+const breadcrumbJsonLd = buildBreadcrumbJsonLd('VTC Montpellier', '/vtc-montpellier')
 
 export default function VtcMontpellier() {
   return (
@@ -34,8 +72,14 @@ export default function VtcMontpellier() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
+      <ErrorBoundary>
       <SceneHero
         heroImageSrc="/images/hero-vtc-montpellier.webp"
+        imageAlt="Chauffeur privé VTCLAND à Montpellier, Hérault"
         title={
           <>
             VTC Montpellier<br />
@@ -71,10 +115,12 @@ export default function VtcMontpellier() {
         ]}
       />
       <SceneServices />
+      <FAQSection items={FAQ_ITEMS} title="Questions fréquentes — VTC Montpellier" />
       <SceneContact
         greeting="Bonsoir. Je suis Élia, votre assistante de réservation pour Montpellier et l'Hérault. Pour quel type de trajet puis-je vous préparer un devis ?"
-        contextNote="Le client navigue depuis la page VTC Montpellier (Hérault). S'il ne précise pas de ville, suppose Montpellier par défaut."
+        contextKey="vtc-montpellier"
       />
+      </ErrorBoundary>
     </main>
   )
 }

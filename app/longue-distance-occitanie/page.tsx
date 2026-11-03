@@ -2,6 +2,32 @@ import type { Metadata } from 'next'
 import SceneHero         from '@/components/scenes/SceneHero'
 import SceneContact      from '@/components/scenes/SceneContact'
 import SectionHighlights from '@/components/ui/SectionHighlights'
+import FAQSection        from '@/components/ui/FAQSection'
+import ErrorBoundary     from '@/components/ui/ErrorBoundary'
+import { buildBreadcrumbJsonLd } from '@/lib/breadcrumb'
+
+const FAQ_ITEMS = [
+  {
+    question: 'Combien coûte un trajet longue distance depuis Montpellier ou Nîmes ?',
+    answer:
+      "Au-delà de 10 km, le tarif est de 2,50€/km, calculé sur l'itinéraire réel de votre trajet. Élia vous confirme le montant exact avant validation de votre réservation, sans surprise à l'arrivée.",
+  },
+  {
+    question: 'Desservez-vous Paris, Lyon, Marseille, Monaco et Genève ?',
+    answer:
+      "Oui, toute destination accessible par la route en France et dans les pays limitrophes peut être desservie depuis Montpellier ou Nîmes.",
+  },
+  {
+    question: 'Le tarif est-il fixe dès la réservation ?',
+    answer:
+      "Oui, le prix est arrêté dès la confirmation de votre devis par Élia. Aucune surprise à l'arrivée, quelle que soit la durée réelle du trajet.",
+  },
+  {
+    question: 'Peut-on faire des arrêts pendant le trajet longue distance ?',
+    answer:
+      "Oui, sur demande. Précisez vos arrêts souhaités à Élia lors de la préparation de votre devis pour que le chauffeur organise l'itinéraire en conséquence.",
+  },
+]
 
 export const metadata: Metadata = {
   title: 'VTC Longue Distance Occitanie | Paris, Lyon, Monaco',
@@ -22,12 +48,25 @@ const jsonLd = {
   name: "VTCLAND — Longue Distance Occitanie",
   description: "Trajets longue distance depuis Montpellier et Nîmes vers Paris, Lyon, Monaco et toute la France.",
   url: `${process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vtcland.fr'}/longue-distance-occitanie`,
+  telephone: '+33783699229',
   serviceType: "Transport longue distance",
   areaServed: [
     { '@type': 'AdministrativeArea', name: 'Occitanie' },
     { '@type': 'Country', name: 'France' },
   ],
+  address: { '@type': 'PostalAddress', addressRegion: 'Occitanie', addressCountry: 'FR' },
+  geo: { '@type': 'GeoCoordinates', latitude: 43.6323851, longitude: 3.9162285 },
+  priceRange: '€€€',
+  openingHoursSpecification: {
+    '@type': 'OpeningHoursSpecification',
+    dayOfWeek: ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'],
+    opens: '00:00',
+    closes: '23:59',
+  },
+  provider: { '@type': 'Organization', name: 'VTCLAND', url: process.env.NEXT_PUBLIC_SITE_URL ?? 'https://vtcland.fr' },
 }
+
+const breadcrumbJsonLd = buildBreadcrumbJsonLd('Longue Distance Occitanie', '/longue-distance-occitanie')
 
 export default function LongueDistanceOccitanie() {
   return (
@@ -36,8 +75,14 @@ export default function LongueDistanceOccitanie() {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(breadcrumbJsonLd) }}
+      />
+      <ErrorBoundary>
       <SceneHero
         heroImageSrc="/images/hero-longue-distance.webp"
+        imageAlt="Chauffeur privé VTCLAND pour trajets longue distance en Occitanie"
         title={
           <>
             Toutes destinations,<br />
@@ -72,10 +117,12 @@ export default function LongueDistanceOccitanie() {
           },
         ]}
       />
+      <FAQSection items={FAQ_ITEMS} title="Questions fréquentes — Longue Distance Occitanie" />
       <SceneContact
         greeting="Bonsoir. Indiquez-moi votre ville de départ (Montpellier, Nîmes...) et votre destination longue distance, et je vous prépare un devis."
-        contextNote="Le type de trajet est 'distance'. Ne demande pas le type : commence directement par les adresses de départ et de destination."
+        contextKey="longue-distance-occitanie"
       />
+      </ErrorBoundary>
     </main>
   )
 }

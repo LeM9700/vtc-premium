@@ -1,0 +1,41 @@
+# VTCLAND
+
+> Chauffeur privé premium en Occitanie — Montpellier, Nîmes, Gard, Hérault.
+
+VTCLAND est un service de chauffeur privé (VTC) haut de gamme opérant en Occitanie,
+disponible 24h/24. La réservation se fait exclusivement via un assistant conversationnel
+nommé Élia, accessible sur chaque page du site.
+
+## Services
+
+- Transfert aéroport et gare (Aéroport Montpellier-Méditerranée, Nîmes-Camargue)
+- Mise à disposition (demi-journée, journée, horaire)
+- VTC événementiel (mariages, séminaires, soirées de prestige)
+- Longue distance (France et Europe)
+
+## Zone desservie
+
+Montpellier, Nîmes, Avignon, Gard, Hérault, Occitanie.
+
+## Tarifs indicatifs
+
+- Trajet court (< 5 km) : 20€ forfaitaire
+- Trajet ≤ 10 km : 25€ forfaitaire
+- Trajet > 10 km : 2,50€/km
+- Mise à disposition : à partir de 70€/h selon la durée
+
+## Réservation
+
+- Uniquement via l'assistant conversationnel "Élia" sur vtcland.fr (pas de formulaire classique)
+- Téléphone : 07 83 69 92 29
+- Disponibilité : 24h/24, 7j/7
+
+## Pages du site
+
+- / — présentation générale
+- /vtc-montpellier — VTC à Montpellier (Hérault)
+- /vtc-nimes — VTC à Nîmes (Gard)
+- /transfert-aeroport-montpellier — transferts Aéroport Montpellier-Méditerranée
+- /vtc-mariage-gard — VTC pour mariages dans le Gard et l'Hérault
+- /chauffeur-prive-professionnel-occitanie — mise à disposition professionnelle
+- /longue-distance-occitanie — trajets longue distance

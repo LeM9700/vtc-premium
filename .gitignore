@@ -32,6 +32,10 @@ yarn-error.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
+
+# raw camera footage — never served, kept locally only
+/raw-footage/
 
 # vercel
 .vercel
@@ -39,3 +43,7 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local Claude/Codex state
+/.claude/settings.local.json
+/.claude/scheduled_tasks.lock

@@ -12,5 +12,8 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { url: `${base}/vtc-mariage-gard`,                        lastModified: now, changeFrequency: 'monthly', priority: 0.8  },
     { url: `${base}/chauffeur-prive-professionnel-occitanie`, lastModified: now, changeFrequency: 'monthly', priority: 0.8  },
     { url: `${base}/longue-distance-occitanie`,               lastModified: now, changeFrequency: 'monthly', priority: 0.75 },
+    { url: `${base}/a-propos`,                                lastModified: now, changeFrequency: 'yearly',  priority: 0.6  },
+    { url: `${base}/mentions-legales`,                        lastModified: now, changeFrequency: 'yearly',  priority: 0.3  },
+    { url: `${base}/politique-de-confidentialite`,            lastModified: now, changeFrequency: 'yearly',  priority: 0.3  },
   ]
 }

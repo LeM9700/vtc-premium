@@ -1,65 +1,56 @@
-import Image from "next/image";
+import type { Metadata } from 'next'
+import SceneContact from '@/components/scenes/SceneContact'
+import SceneHero from '@/components/scenes/SceneHero'
+import SceneIdentity from '@/components/scenes/SceneIdentity'
+import SceneServices from '@/components/scenes/SceneServices'
+import SceneSocialProof from '@/components/scenes/SceneSocialProof'
+import SceneVehicle from '@/components/scenes/SceneVehicle'
+import FAQSection from '@/components/ui/FAQSection'
+import PricingSection from '@/components/ui/PricingSection'
+import ErrorBoundary from '@/components/ui/ErrorBoundary'
+import { getGoogleReviews } from '@/lib/googleReviews'
 
-export default function Home() {
+export const metadata: Metadata = {
+  alternates: { canonical: '/' },
+}
+
+const FAQ_ITEMS = [
+  {
+    question: 'Comment fonctionne la réservation avec Élia ?',
+    answer:
+      "Élia, notre assistante de réservation, vous pose quelques questions sur votre trajet directement dans le chat du site : type de trajet, adresses, date, heure, nombre de passagers. Une fois toutes les informations réunies, le tarif est calculé automatiquement et un email de confirmation vous est envoyé. Notre chauffeur vous recontacte ensuite sous 2 heures.",
+  },
+  {
+    question: 'Quels sont vos tarifs ?',
+    answer:
+      "Pour un trajet court (moins de 5 km), le tarif est forfaitaire à 20€. Jusqu'à 10 km, il est de 25€. Au-delà, le tarif est de 2,50€/km. Pour une mise à disposition, comptez à partir de 70€/h selon la durée choisie. Le tarif exact de votre trajet est calculé automatiquement par Élia lors de la réservation.",
+  },
+  {
+    question: 'VTCLAND est-il disponible la nuit ?',
+    answer:
+      "Oui, le service est disponible 24h/24 et 7j/7 en Occitanie, y compris pour les vols de nuit et les prises en charge tardives.",
+  },
+  {
+    question: 'Quelles zones desservez-vous ?',
+    answer:
+      "VTCLAND opère principalement à Montpellier, Nîmes, dans le Gard et l'Hérault, ainsi que pour des trajets longue distance vers le reste de la France.",
+  },
+]
+
+export default async function HomePage() {
+  const reviews = await getGoogleReviews()
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
-      </main>
-    </div>
-  );
+    <main>
+      <ErrorBoundary><SceneHero /></ErrorBoundary>
+      <ErrorBoundary><SceneIdentity /></ErrorBoundary>
+      <ErrorBoundary><SceneVehicle /></ErrorBoundary>
+      <ErrorBoundary><SceneServices /></ErrorBoundary>
+      <ErrorBoundary><SceneSocialProof reviews={reviews} /></ErrorBoundary>
+      <PricingSection />
+      <FAQSection items={FAQ_ITEMS} />
+      <ErrorBoundary><SceneContact /></ErrorBoundary>
+      {/* Les scènes arrivent une par une */}
+    </main>
+  )
 }
