@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState, useCallback } from 'react'
-import { track } from '@vercel/analytics'
+import { track } from '@/lib/analytics'
 import { gsap, ScrollTrigger, prefersReducedMotion } from '@/lib/gsap'
 import type { TripType } from '@/lib/pricing'
 import type { ContextKey } from '@/lib/systemPrompt'

@@ -1,7 +1,8 @@
 'use client'
 
 import { FormEvent, useState } from 'react'
-import { track } from '@vercel/analytics'
+
+import { track } from '@/lib/analytics'
 
 import AddressAutocomplete from './AddressAutocomplete'
 
@@ -15,6 +16,31 @@ const initial = {
   email: '',
   phone: '',
   hours: '1',
+}
+
+type ReservationErrorPayload = {
+  error?: string
+  message?: string
+  details?: {
+    fieldErrors?: Record<string, string[] | undefined>
+  }
+}
+
+const fieldLabels: Record<string, string> = {
+  pickupAddress: 'adresse de départ',
+  dropoffAddress: 'adresse d’arrivée',
+  pickupAt: 'date et heure',
+  passengers: 'nombre de passagers',
+  customer: 'coordonnées client',
+}
+
+function reservationErrorMessage(payload: ReservationErrorPayload): string {
+  const invalidField = Object.keys(payload.details?.fieldErrors ?? {})[0]
+  if (invalidField) {
+    const label = fieldLabels[invalidField] ?? invalidField
+    return `Vérifiez le champ « ${label} ».`
+  }
+  return payload.message ?? payload.error ?? 'Demande non envoyée'
 }
 
 export default function QuickBookingForm() {
@@ -72,14 +98,19 @@ export default function QuickBookingForm() {
         customer: { name: data.name, email: data.email, phone: data.phone },
       }),
     })
-    const payload = await response.json()
+    const payload = await response.json() as ReservationErrorPayload & { reference?: string; priceEur?: number }
     setBusy(false)
     if (!response.ok) {
-      setError(payload.message ?? payload.error ?? 'Demande non envoyée')
+      setError(reservationErrorMessage(payload))
       track('request_failed')
       return
     }
-    setResult(payload)
+    if (!payload.reference || typeof payload.priceEur !== 'number') {
+      setError('La réponse du service de réservation est incomplète.')
+      track('request_failed')
+      return
+    }
+    setResult({ reference: payload.reference, priceEur: payload.priceEur })
     track('request_submitted')
   }
 
@@ -149,7 +180,7 @@ export default function QuickBookingForm() {
         type="tel"
         minLength={8}
         maxLength={30}
-        pattern="[-0-9+(). ]{8,30}"
+        pattern={String.raw`(?:[0-9]|\+|\-|\.|\(|\)| ){8,30}`}
         title="Saisissez un numéro valide, par exemple 06 12 34 56 78."
         placeholder="Téléphone (ex. 06 12 34 56 78)"
         value={data.phone}
