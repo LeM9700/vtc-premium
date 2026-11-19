@@ -1,7 +1,5 @@
 import type { Metadata } from 'next'
 import { Cormorant_Garamond, DM_Sans } from 'next/font/google'
-import { Analytics }      from '@vercel/analytics/next'
-import { SpeedInsights }  from '@vercel/speed-insights/next'
 import SmoothScroller from '@/components/layout/SmoothScroller'
 import CustomCursor   from '@/components/ui/CustomCursor'
 import LoadingScreen  from '@/components/ui/LoadingScreen'
@@ -94,8 +92,6 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         >
           Appeler
         </a>
-        <Analytics />
-        <SpeedInsights />
       </body>
     </html>
   )
