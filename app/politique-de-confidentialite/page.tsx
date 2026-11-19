@@ -22,7 +22,7 @@ export default function PolitiqueConfidentialitePage() {
           Politique de confidentialité
         </h1>
         <p className="text-[#F5F0E8]/60 text-xs uppercase tracking-widest mb-12">
-          Dernière mise à jour : 17 juillet 2026
+          Dernière mise à jour : 19 novembre 2026
         </p>
 
         <div className="space-y-10 text-[#F5F0E8]/70 text-sm leading-relaxed font-light">
@@ -62,12 +62,13 @@ export default function PolitiqueConfidentialitePage() {
             <h2 className="text-[#F5F0E8] text-lg font-normal mb-3">Destinataires et sous-traitants</h2>
             <p>Vos données peuvent être transmises aux prestataires techniques suivants, dans la stricte mesure nécessaire au fonctionnement du service :</p>
             <ul className="mt-3 space-y-2 list-disc list-inside">
-              <li><span className="text-[#F5F0E8]">Anthropic</span> (États-Unis) — traitement conversationnel de votre demande par l&apos;assistante Élia.</li>
-              <li><span className="text-[#F5F0E8]">OpenRouteService</span> (Allemagne) — calcul de l&apos;itinéraire et de la distance de votre trajet.</li>
-              <li><span className="text-[#F5F0E8]">Resend</span> (États-Unis) — envoi des emails de devis et de confirmation.</li>
-              <li><span className="text-[#F5F0E8]">Vercel</span> (États-Unis) — mesure d&apos;audience anonymisée sans cookie (pages consultées, performance technique).</li>
-              <li><span className="text-[#F5F0E8]">Sentry</span> (États-Unis) — journalisation technique des erreurs du site, à des fins de maintenance uniquement.</li>
-              <li><span className="text-[#F5F0E8]">Railway</span> (États-Unis) — hébergement de l&apos;application.</li>
+              <li><span className="text-[#F5F0E8]">Anthropic</span> (États-Unis) — traitement conversationnel de votre demande par l&apos;assistante Élia, lorsqu&apos;elle est utilisée.</li>
+              <li><span className="text-[#F5F0E8]">Google Maps Platform</span> — autocomplétion des adresses, calcul de l&apos;itinéraire et de la distance.</li>
+              <li><span className="text-[#F5F0E8]">Telegram</span> — notification de la demande et transmission des informations nécessaires au chauffeur.</li>
+              <li><span className="text-[#F5F0E8]">Resend</span> (États-Unis) — envoi et suivi technique des emails transactionnels.</li>
+              <li><span className="text-[#F5F0E8]">Railway</span> (États-Unis) — hébergement du site, de l&apos;API et de la base de données PostgreSQL.</li>
+              <li><span className="text-[#F5F0E8]">Cloudflare</span> — stockage chiffré des sauvegardes techniques de la base de données.</li>
+              <li><span className="text-[#F5F0E8]">Sentry</span> (États-Unis) — journalisation technique des erreurs lorsque ce service est activé, à des fins de maintenance uniquement.</li>
             </ul>
             <p className="mt-3">
               Les transferts vers des prestataires situés hors de l&apos;Union européenne s&apos;appuient sur les
@@ -80,10 +81,16 @@ export default function PolitiqueConfidentialitePage() {
           <section>
             <h2 className="text-[#F5F0E8] text-lg font-normal mb-3">Durée de conservation</h2>
             <p>
-              Ce site ne dispose d&apos;aucune base de données : les informations collectées ne sont conservées
-              que dans les emails envoyés à notre équipe et dans votre boîte de réception. Elles sont supprimées
-              selon la politique de conservation de votre messagerie et de la nôtre. Aucun profilage ni
-              conservation à long terme n&apos;est effectué sur ce site.
+              Les demandes, coordonnées client, changements de statut et historiques de notification sont
+              enregistrés dans la base de données PostgreSQL de VTCLAND afin de traiter la demande, d&apos;assurer
+              le suivi de la course et de gérer les éventuelles réclamations. Des sauvegardes techniques
+              quotidiennes sont conservées pendant 30 jours.
+            </p>
+            <p className="mt-3">
+              La durée de conservation opérationnelle définitive des demandes doit encore être formalisée et
+              automatisée. Dans l&apos;intervalle, vous pouvez demander l&apos;effacement de vos données à tout moment,
+              sous réserve des informations qui doivent être conservées pour respecter une obligation légale ou
+              défendre un droit en justice.
             </p>
           </section>
 
@@ -100,12 +107,11 @@ export default function PolitiqueConfidentialitePage() {
           </section>
 
           <section>
-            <h2 className="text-[#F5F0E8] text-lg font-normal mb-3">Cookies</h2>
+            <h2 className="text-[#F5F0E8] text-lg font-normal mb-3">Cookies et mesure d&apos;audience</h2>
             <p>
-              Ce site n&apos;utilise aucun cookie de suivi publicitaire. La mesure d&apos;audience (Vercel
-              Analytics) fonctionne sans cookie et sans identifiant persistant. Le suivi d&apos;erreurs (Sentry)
-              ne collecte que des informations techniques nécessaires au diagnostic de bugs, jamais à des fins
-              commerciales ou publicitaires.
+              Ce site n&apos;utilise aucun cookie de suivi publicitaire. Le suivi d&apos;erreurs Sentry, lorsqu&apos;il est
+              activé, traite uniquement les informations techniques nécessaires au diagnostic de bugs et n&apos;est
+              pas utilisé à des fins commerciales ou publicitaires.
             </p>
           </section>
         </div>
