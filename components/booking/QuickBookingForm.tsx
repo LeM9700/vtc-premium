@@ -129,7 +129,8 @@ export default function QuickBookingForm() {
   const fields = [
     <div key="route" className="space-y-4">
       <h3 className="text-2xl">Quel trajet souhaitez-vous ?</h3>
-      <select value={data.type} onChange={event => update('type', event.target.value)} className="field">
+      <label htmlFor="trip-type" className="sr-only">Type de trajet</label>
+      <select id="trip-type" aria-label="Type de trajet" value={data.type} onChange={event => update('type', event.target.value)} className="field">
         <option value="ride">Trajet</option>
         <option value="disposal">Mise à disposition</option>
       </select>
