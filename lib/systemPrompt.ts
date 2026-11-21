@@ -59,5 +59,8 @@ Quand tu as TOUTES les infos (les 12 points), envoie UN message de confirmation 
 <COLLECTED>{"type":"airport|disposal|event|distance","departure":"...","destination":"...","date":"...","time":"...","passengers":"...","hours":4,"options":[],"payment":"...","name":"...","phone":"...","email":"..."}</COLLECTED>
 
 Pour "type" utilise uniquement : airport, disposal, event, distance.
-Pour mise à disposition, destination = "N/A".`
+Pour mise à disposition, destination = "N/A".
+Pour "date", utilise EXCLUSIVEMENT le format ISO "AAAA-MM-JJ" (ex: "2026-11-20"), jamais "JJ/MM/AAAA" ni de texte.
+Pour "time", utilise EXCLUSIVEMENT le format 24h "HH:MM" (ex: "19:00"), jamais "19h00" ni de texte.
+Ces deux champs sont lus par un programme, pas par un humain : un format incorrect fait échouer la réservation du client.`
 }

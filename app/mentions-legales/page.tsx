@@ -47,11 +47,6 @@ export default function MentionsLegalesPage() {
               Le site est hébergé par Railway Corporation, 548 Market St PMB 68956, San Francisco, CA 94104,
               États-Unis (railway.com).
             </p>
-            <p className="mt-3 text-[#F5F0E8]/60 text-xs">
-              Adresse identifiée par recherche publique, non confirmée directement auprès de l&apos;hébergeur —
-              à vérifier avant publication, notamment une fois le déploiement effectif réalisé sur cette
-              plateforme.
-            </p>
           </section>
 
           <section>

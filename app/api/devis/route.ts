@@ -10,11 +10,41 @@ interface DevisPayload {
 }
 
 function parisLocalToIso(date: string, time: string): string {
-  const approximate = new Date(`${date}T${time}:00Z`)
+  // Normalise les formats que le modèle pourrait malgré tout produire
+  // (JJ/MM/AAAA, "19h00", espaces) : défense en profondeur, le contrat
+  // attendu reste AAAA-MM-JJ / HH:MM imposé par le prompt système.
+  const normalizedDate = (() => {
+    const iso = date.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/)
+    if (iso) return date.trim()
+    const fr = date.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/)
+    if (fr) return `${fr[3]}-${fr[2].padStart(2, '0')}-${fr[1].padStart(2, '0')}`
+    return null
+  })()
+
+  const normalizedTime = (() => {
+    const hm = time.trim().match(/^(\d{1,2}):(\d{2})$/)
+    if (hm) return `${hm[1].padStart(2, '0')}:${hm[2]}`
+    const hFr = time.trim().match(/^(\d{1,2})h(\d{2})?$/i)
+    if (hFr) return `${hFr[1].padStart(2, '0')}:${(hFr[2] ?? '00').padStart(2, '0')}`
+    return null
+  })()
+
+  if (!normalizedDate || !normalizedTime) {
+    throw new Error(`Date/heure non reconnues : "${date}" "${time}"`)
+  }
+
+  const approximate = new Date(`${normalizedDate}T${normalizedTime}:00Z`)
+  if (Number.isNaN(approximate.getTime())) {
+    throw new Error(`Date/heure invalides : "${normalizedDate}" "${normalizedTime}"`)
+  }
   const zone = new Intl.DateTimeFormat('en-US', {
     timeZone: 'Europe/Paris', timeZoneName: 'longOffset',
   }).formatToParts(approximate).find(item => item.type === 'timeZoneName')?.value
-  return new Date(`${date}T${time}:00${zone?.replace('GMT', '') || '+01:00'}`).toISOString()
+  const result = new Date(`${normalizedDate}T${normalizedTime}:00${zone?.replace('GMT', '') || '+01:00'}`)
+  if (Number.isNaN(result.getTime())) {
+    throw new Error(`Date/heure invalides après application du fuseau : "${normalizedDate}" "${normalizedTime}"`)
+  }
+  return result.toISOString()
 }
 
 export async function POST(request: NextRequest) {
