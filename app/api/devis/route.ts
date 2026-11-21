@@ -9,22 +9,39 @@ interface DevisPayload {
   passengers?: string; hours?: number; options?: string[]; payment?: string
 }
 
+const FRENCH_MONTHS: Record<string, number> = {
+  janvier: 1, février: 2, fevrier: 2, mars: 3, avril: 4, mai: 5, juin: 6,
+  juillet: 7, août: 8, aout: 8, septembre: 9, octobre: 10, novembre: 11,
+  décembre: 12, decembre: 12,
+}
+
 function parisLocalToIso(date: string, time: string): string {
   // Normalise les formats que le modèle pourrait malgré tout produire
-  // (JJ/MM/AAAA, "19h00", espaces) : défense en profondeur, le contrat
-  // attendu reste AAAA-MM-JJ / HH:MM imposé par le prompt système.
+  // (JJ/MM/AAAA, "19h00", "15 décembre 2026", espaces) : défense en
+  // profondeur, le contrat attendu reste AAAA-MM-JJ / HH:MM imposé par
+  // le prompt système, mais le modèle peut toujours s'en écarter.
   const normalizedDate = (() => {
-    const iso = date.trim().match(/^(\d{4})-(\d{2})-(\d{2})$/)
-    if (iso) return date.trim()
-    const fr = date.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/)
+    const trimmed = date.trim()
+    const iso = trimmed.match(/^(\d{4})-(\d{2})-(\d{2})$/)
+    if (iso) return trimmed
+    const fr = trimmed.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/)
     if (fr) return `${fr[3]}-${fr[2].padStart(2, '0')}-${fr[1].padStart(2, '0')}`
+    // "15 décembre 2026", "le 1er décembre 2026"
+    const literal = trimmed
+      .toLowerCase()
+      .match(/^(?:le\s+)?(\d{1,2})(?:er)?\s+([a-zéû]+)\s+(\d{4})$/)
+    if (literal) {
+      const month = FRENCH_MONTHS[literal[2]]
+      if (month) return `${literal[3]}-${String(month).padStart(2, '0')}-${literal[1].padStart(2, '0')}`
+    }
     return null
   })()
 
   const normalizedTime = (() => {
-    const hm = time.trim().match(/^(\d{1,2}):(\d{2})$/)
+    const trimmed = time.trim().replace(/^[àa]\s+/i, '')
+    const hm = trimmed.match(/^(\d{1,2}):(\d{2})$/)
     if (hm) return `${hm[1].padStart(2, '0')}:${hm[2]}`
-    const hFr = time.trim().match(/^(\d{1,2})h(\d{2})?$/i)
+    const hFr = trimmed.match(/^(\d{1,2})\s*h\s*(\d{2})?$/i)
     if (hFr) return `${hFr[1].padStart(2, '0')}:${(hFr[2] ?? '00').padStart(2, '0')}`
     return null
   })()

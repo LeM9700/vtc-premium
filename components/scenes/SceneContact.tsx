@@ -82,13 +82,25 @@ export default function SceneContact({ greeting, contextKey }: SceneContactProps
     }, INACTIVITY_MS)
   }, [])
 
-  // ── Smart scroll — scroll en bas seulement si déjà proche du bas ──
+  // ── Smart scroll — toujours suivre son propre message envoyé ; sinon,
+  // ne recentrer que si déjà proche du bas (ne pas interrompre une
+  // lecture remontée dans l'historique pendant la réponse d'Élia).
+  // Sur mobile, le clavier virtuel change la hauteur visible en cours
+  // d'animation : un setTimeout court laisse le temps à la mise en page
+  // de se stabiliser avant de recalculer la position.
+  const scrollToBottom = useCallback(() => {
+    const el = messagesRef.current
+    if (el) el.scrollTop = el.scrollHeight
+  }, [])
+
   useEffect(() => {
     const el = messagesRef.current
     if (!el) return
     const isNearBottom = el.scrollHeight - el.scrollTop - el.clientHeight < 80
     if (isNearBottom) el.scrollTop = el.scrollHeight
-  }, [messages, loading, streamingText])
+    const timeout = setTimeout(scrollToBottom, 320) // après l'animation du clavier iOS
+    return () => clearTimeout(timeout)
+  }, [messages, loading, streamingText, scrollToBottom])
 
   // ── Start inactivity timer on mount, clean up on unmount ─────────────────────
   useEffect(() => {
