@@ -73,4 +73,29 @@ describe('anti-abus /api/devis', () => {
     }) as never)
     expect(await response.json()).toEqual({ reference: 'DEV-42', priceEur: 120 })
   })
+
+  it('envoie une idempotency-key dérivée courte même pour un token HMAC long', async () => {
+    vi.stubEnv('VTCLAND_API_URL', 'https://api.example.test')
+    vi.mocked(fetch).mockResolvedValueOnce(new Response(JSON.stringify({
+      reference: 'DEV-99', priceEur: 50,
+    }), { status: 201 }))
+    // Le vrai token signé HMAC (lib/devisToken.ts) dépasse largement 128 caractères ;
+    // l'API métier centrale rejette toute idempotency-key de plus de 128 caractères
+    // (zod .max(128) côté api-vtcland/src/routes/bookings.ts).
+    const longToken = 'a'.repeat(40) + '.' + '1'.repeat(13) + '.' + '1'.repeat(13) + '.' + 'b'.repeat(64) + '.' + 'c'.repeat(64)
+    expect(longToken.length).toBeGreaterThan(128)
+    await POST(new Request('http://localhost/api/devis', {
+      method: 'POST', headers: { 'x-real-ip': '198.51.100.79' },
+      body: JSON.stringify({
+        token: longToken, type: 'distance', departure: 'Nîmes', destination: 'Montpellier',
+        date: '2026-12-15', time: '09:30', passengers: '2', options: [], payment: 'Carte bancaire',
+        name: 'Ada Lovelace', phone: '0612345678', email: 'ada@example.com',
+      }),
+    }) as never)
+    const sentHeaders = vi.mocked(fetch).mock.calls[0][1] as RequestInit
+    const sentKey = (sentHeaders.headers as Record<string, string>)['idempotency-key']
+    expect(sentKey.length).toBeLessThanOrEqual(128)
+    expect(sentKey.length).toBeGreaterThanOrEqual(16)
+    expect(sentKey).toMatch(/^elia:[A-Za-z0-9._:-]+$/)
+  })
 })

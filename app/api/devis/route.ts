@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createHash } from 'node:crypto'
 import * as Sentry from '@sentry/nextjs'
 import { consumeDevisToken } from '@/lib/devisToken'
 import { checkRateLimit, getClientIp } from '@/lib/rateLimit'
@@ -18,6 +19,17 @@ const FRENCH_MONTHS: Record<string, number> = {
   décembre: 12, decembre: 12,
 }
 const MAX_DEVIS_BODY_BYTES = 16 * 1024
+
+/**
+ * Dérive une idempotency-key courte et stable à partir du token signé.
+ * Le token HMAC complet (lib/devisToken.ts) dépasse 128 caractères, limite
+ * imposée par l'API métier centrale (zod .max(128) sur booking-requests) ;
+ * un hash tronqué conserve l'unicité par soumission sans dépendre du
+ * format exact du token.
+ */
+function idempotencyKeyFrom(token: string): string {
+  return `elia:${createHash('sha256').update(token).digest('hex').slice(0, 48)}`
+}
 
 export function parisLocalToIso(date: string, time: string): string {
   // Normalise les formats que le modèle pourrait malgré tout produire
@@ -99,7 +111,7 @@ export async function POST(request: NextRequest) {
     const disposal = confirmedData.type === 'disposal'
     const response = await fetch(`${apiUrl.replace(/\/$/, '')}/booking-requests`, {
       method: 'POST',
-      headers: { 'content-type': 'application/json', 'idempotency-key': `elia:${payload.token}` },
+      headers: { 'content-type': 'application/json', 'idempotency-key': idempotencyKeyFrom(payload.token!) },
       body: JSON.stringify({
         type: disposal ? 'disposal' : 'ride', source: 'elia', pickupAddress: confirmedData.departure,
         ...(disposal ? { disposalMinutes: Math.max(15, Math.round((confirmedData.hours ?? 1) * 60)) } : { dropoffAddress: confirmedData.destination }),
