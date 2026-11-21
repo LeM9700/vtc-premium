@@ -1,3 +1,5 @@
+import { GOOGLE_REVIEWS_FALLBACK_URI } from '@/lib/links'
+
 /**
  * Récupère la note et les avis réels de la fiche Google Business Profile
  * VTCLAND via l'API Places (New). Nécessite un projet Google Cloud avec
@@ -61,7 +63,7 @@ export async function getGoogleReviews(): Promise<GoogleReviewsData | null> {
     return {
       rating: place.rating,
       userRatingCount: place.userRatingCount ?? 0,
-      mapsUri: place.googleMapsUri ?? 'https://maps.app.goo.gl/dHeBLrgB8P3VyAZ77',
+      mapsUri: place.googleMapsUri ?? GOOGLE_REVIEWS_FALLBACK_URI,
       reviews: (place.reviews ?? [])
         .filter((r: { text?: { text?: string } }) => !!r.text?.text)
         .slice(0, 3)

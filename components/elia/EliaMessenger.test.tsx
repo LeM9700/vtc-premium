@@ -34,6 +34,13 @@ describe('EliaMessenger', () => {
     vi.stubGlobal('fetch', vi.fn())
     HTMLDialogElement.prototype.showModal = vi.fn(function (this: HTMLDialogElement) { this.open = true })
     HTMLDialogElement.prototype.close = vi.fn(function (this: HTMLDialogElement) { this.open = false })
+    window.history.replaceState({}, '', '/')
+  })
+
+  it('ouvre automatiquement Élia depuis le lien global dédié', async () => {
+    window.history.replaceState({}, '', '/?elia=open#contact')
+    render(<EliaMessenger greeting="Bonjour" />)
+    expect(await screen.findByRole('dialog', { name: /conversation avec élia/i })).toBeInTheDocument()
   })
 
   it('exige le consentement avant le premier message et expose un dialogue accessible', async () => {
@@ -207,20 +214,10 @@ describe('EliaMessenger', () => {
     expect(screen.getByText('2026-12-15')).toBeInTheDocument()
   })
 
-  it('observe le bas de la section contact entière avant le bouton flottant', async () => {
-    let callback!: IntersectionObserverCallback
-    const observe = vi.fn()
-    vi.stubGlobal('IntersectionObserver', vi.fn(function (this: IntersectionObserver, cb: IntersectionObserverCallback) {
-      callback = cb
-      return { observe, disconnect: vi.fn(), unobserve: vi.fn(), takeRecords: vi.fn(), root: null, rootMargin: '', thresholds: [] }
-    }))
+  it('ne duplique pas le menu d’action global avec un second bouton flottant Élia', async () => {
     render(<section id="contact"><EliaMessenger greeting="Bonjour" /></section>)
     await screen.findByRole('button', { name: /ouvrir la conversation/i })
-    expect((observe.mock.calls[0][0] as HTMLElement).id).toBe('contact')
-    callback([{ isIntersecting: false, boundingClientRect: { top: -100, bottom: 100 } } as IntersectionObserverEntry], {} as IntersectionObserver)
-    expect(screen.getAllByRole('button', { name: /ouvrir la conversation/i })).toHaveLength(1)
-    callback([{ isIntersecting: false, boundingClientRect: { top: -200, bottom: -1 } } as IntersectionObserverEntry], {} as IntersectionObserver)
-    expect(await screen.findByText('Parler à Élia')).toBeInTheDocument()
+    expect(screen.queryByText('Parler à Élia')).not.toBeInTheDocument()
   })
 
   it('gère visualViewport resize/scroll et restaure exactement body et scroll au cleanup', async () => {
