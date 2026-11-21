@@ -196,7 +196,6 @@ export default function EliaMessenger({ greeting, contextKey }: EliaMessengerPro
   const dialogRef = useRef<HTMLDialogElement>(null)
   const logRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
-  const ctaRef = useRef<HTMLDivElement>(null)
   const rateLimitTimerRef = useRef<number>(undefined)
   const sessionSaveTimerRef = useRef<number>(undefined)
   const draftActivityTimerRef = useRef<number>(undefined)
@@ -204,7 +203,6 @@ export default function EliaMessenger({ greeting, contextKey }: EliaMessengerPro
   const sessionExpiredRef = useRef(false)
   const [hydrated, setHydrated] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
-  const [hasPassedCta, setHasPassedCta] = useState(false)
   const [hasConsent, setHasConsent] = useState(false)
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [draft, setDraft] = useState('')
@@ -233,7 +231,8 @@ export default function EliaMessenger({ greeting, contextKey }: EliaMessengerPro
       setDraft(restored.draft)
       setCollectedState(restored.collectedState)
       setUserMessageCount(restored.userMessageCount)
-      setIsOpen(restored.isOpen)
+      const requestedByGlobalMenu = new URLSearchParams(window.location.search).get('elia') === 'open'
+      setIsOpen(restored.isOpen || requestedByGlobalMenu)
       setHasConsent(restored.hasConsent)
       setReadyForConfirmation(restored.readyForConfirmation === true)
       setDevisToken(restored.devisToken)
@@ -280,16 +279,6 @@ export default function EliaMessenger({ greeting, contextKey }: EliaMessengerPro
     }, remaining)
     return () => window.clearTimeout(timer)
   }, [greeting, hydrated, lastActivityAt, success])
-
-  useEffect(() => {
-    const target = ctaRef.current?.closest('#contact') ?? ctaRef.current
-    if (!target || !('IntersectionObserver' in window)) return
-    const observer = new IntersectionObserver(([entry]) => {
-      setHasPassedCta(!entry.isIntersecting && entry.boundingClientRect.bottom < 0)
-    })
-    observer.observe(target)
-    return () => observer.disconnect()
-  }, [])
 
   const closeDialog = useCallback(() => {
     dialogRef.current?.close()
@@ -517,12 +506,12 @@ export default function EliaMessenger({ greeting, contextKey }: EliaMessengerPro
     }
   }
 
-  if (!hydrated) return <div ref={ctaRef} className="h-24" aria-hidden="true" />
+  if (!hydrated) return <div className="h-24" aria-hidden="true" />
 
   const limitReached = userMessageCount >= MAX_USER_MESSAGES
   return (
     <>
-      <div ref={ctaRef} className="relative z-10 max-w-xl rounded-3xl border border-[#C9A96E]/20 bg-[#111] p-6 sm:p-8">
+      <div className="relative z-10 max-w-xl rounded-3xl border border-[#C9A96E]/20 bg-[#111] p-6 sm:p-8">
         <div className="flex items-center gap-4">
           <span className="grid h-12 w-12 place-items-center rounded-full bg-[#C9A96E] font-display text-xl text-black" aria-hidden="true">É</span>
           <div>
@@ -535,13 +524,6 @@ export default function EliaMessenger({ greeting, contextKey }: EliaMessengerPro
           Ouvrir la conversation avec Élia
         </button>
       </div>
-
-      {hasPassedCta && !isOpen && (
-        <button type="button" onClick={openDialog} className="fixed bottom-5 right-5 z-40 flex items-center gap-2 rounded-full border border-[#C9A96E]/40 bg-[#111] p-2 pr-4 text-sm text-[#F5F0E8] shadow-xl" aria-label="Ouvrir la conversation avec Élia">
-          <span className="grid h-10 w-10 place-items-center rounded-full bg-[#C9A96E] text-black" aria-hidden="true">É</span>
-          Parler à Élia
-        </button>
-      )}
 
       <dialog
         ref={dialogRef}

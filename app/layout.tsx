@@ -5,6 +5,7 @@ import CustomCursor   from '@/components/ui/CustomCursor'
 import LoadingScreen  from '@/components/ui/LoadingScreen'
 import JsonLd         from '@/components/seo/JsonLd'
 import FooterSeo      from '@/components/layout/FooterSeo'
+import FloatingActionMenu from '@/components/ui/FloatingActionMenu'
 import '@/app/globals.css'
 
 const cormorant = Cormorant_Garamond({
@@ -84,14 +85,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </div>
           <FooterSeo />
         </SmoothScroller>
-        {/* CTA téléphonique persistant sur mobile — le numéro n'était sinon
-            visible que dans le footer ou en session de chat limitée/expirée. */}
-        <a
-          href="tel:0783699229"
-          className="md:hidden fixed bottom-[calc(1rem_+_env(safe-area-inset-bottom))] right-4 z-[9990] flex items-center gap-2 bg-[#C9A96E] text-[#0A0A0A] px-5 py-3 rounded-full text-xs font-medium tracking-widest uppercase shadow-lg"
-        >
-          Appeler
-        </a>
+        <FloatingActionMenu />
       </body>
     </html>
   )

@@ -3,8 +3,9 @@
 import { useEffect, useRef } from 'react'
 import { gsap, ScrollTrigger } from '@/lib/gsap'
 import type { GoogleReviewsData } from '@/lib/googleReviews'
+import { GOOGLE_REVIEWS_FALLBACK_URI } from '@/lib/links'
 
-const FALLBACK_MAPS_URI = 'https://maps.app.goo.gl/dHeBLrgB8P3VyAZ77'
+const FALLBACK_MAPS_URI = GOOGLE_REVIEWS_FALLBACK_URI
 
 const QUICK_STATS = [
   { value: '100%', label: 'Ponctualité' },
