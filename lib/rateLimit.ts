@@ -1,14 +1,15 @@
+import { isIP } from 'node:net'
+
 /**
  * Rate limiting en mémoire, par clé (ex: `chat:203.0.113.4`).
- * Suffisant pour une instance serverless unique — pas de garantie
- * cross-instance, mais empêche l'abus trivial (header client forgeable).
+ * Best-effort par instance : la Map n'offre aucune garantie multi-instance.
+ * L'idempotency key de l'API centrale reste la dernière défense des devis.
  */
 
 interface RateLimitEntry {
   count:   number
   resetAt: number
 }
-
 const buckets = new Map<string, RateLimitEntry>()
 
 function cleanup(now: number) {
@@ -34,7 +35,13 @@ export function checkRateLimit(key: string, max: number, windowMs: number): bool
 }
 
 export function getClientIp(req: Request): string {
-  const forwarded = req.headers.get('x-forwarded-for')
-  if (forwarded) return forwarded.split(',')[0].trim()
-  return req.headers.get('x-real-ip') ?? 'unknown'
+  const isIp = (value: string | null): value is string => {
+    return Boolean(value && isIP(value) !== 0)
+  }
+  for (const header of ['cf-connecting-ip', 'railway-client-ip', 'x-real-ip']) {
+    const candidate = req.headers.get(header)?.trim() ?? null
+    if (isIp(candidate)) return candidate
+  }
+  const hops = (req.headers.get('x-forwarded-for') ?? '').split(',').map(value => value.trim()).filter(isIp)
+  return hops.at(-1) ?? 'unknown'
 }

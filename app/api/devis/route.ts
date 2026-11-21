@@ -1,9 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import * as Sentry from '@sentry/nextjs'
 import { consumeDevisToken } from '@/lib/devisToken'
+import { checkRateLimit, getClientIp } from '@/lib/rateLimit'
+import { isReadyForConfirmation, sanitizeCollectedState } from '@/lib/eliaValidation'
 
 interface DevisPayload {
   token?: string; name?: string; phone?: string; email?: string
+  message2?: string
   type?: 'airport' | 'disposal' | 'event' | 'distance'
   departure?: string; destination?: string; date?: string; time?: string
   passengers?: string; hours?: number; options?: string[]; payment?: string
@@ -14,8 +17,9 @@ const FRENCH_MONTHS: Record<string, number> = {
   juillet: 7, août: 8, aout: 8, septembre: 9, octobre: 10, novembre: 11,
   décembre: 12, decembre: 12,
 }
+const MAX_DEVIS_BODY_BYTES = 16 * 1024
 
-function parisLocalToIso(date: string, time: string): string {
+export function parisLocalToIso(date: string, time: string): string {
   // Normalise les formats que le modèle pourrait malgré tout produire
   // (JJ/MM/AAAA, "19h00", "15 décembre 2026", espaces) : défense en
   // profondeur, le contrat attendu reste AAAA-MM-JJ / HH:MM imposé par
@@ -66,37 +70,54 @@ function parisLocalToIso(date: string, time: string): string {
 
 export async function POST(request: NextRequest) {
   try {
-    const payload = await request.json() as DevisPayload
-    if (!consumeDevisToken(payload.token)) {
-      return NextResponse.json({ error: 'Requête non autorisée' }, { status: 403 })
+    const ip = getClientIp(request)
+    if (!checkRateLimit(`devis:${ip}`, 5, 10 * 60 * 1000)) {
+      return NextResponse.json({ error: 'Trop de demandes. Réessayez dans quelques minutes.' }, { status: 429 })
     }
-    if (!payload.name || !payload.phone || !payload.email || !payload.type || !payload.departure || !payload.date || !payload.time) {
+    const rawBody = await request.text()
+    if (new TextEncoder().encode(rawBody).byteLength > MAX_DEVIS_BODY_BYTES) {
+      return NextResponse.json({ error: 'Requête trop volumineuse' }, { status: 413 })
+    }
+    let payload: DevisPayload
+    try {
+      payload = JSON.parse(rawBody) as DevisPayload
+    } catch {
+      return NextResponse.json({ error: 'Requête invalide' }, { status: 400 })
+    }
+    if (payload.message2) {
+      return NextResponse.json({ error: 'Requête invalide' }, { status: 400 })
+    }
+    const confirmedData = sanitizeCollectedState(payload)
+    if (!isReadyForConfirmation(confirmedData)) {
       return NextResponse.json({ error: 'Informations incomplètes' }, { status: 400 })
+    }
+    if (!consumeDevisToken(payload.token, confirmedData, 750)) {
+      return NextResponse.json({ error: 'Requête non autorisée' }, { status: 403 })
     }
     const apiUrl = process.env.VTCLAND_API_URL
     if (!apiUrl) throw new Error('VTCLAND_API_URL manquante')
-    const disposal = payload.type === 'disposal'
+    const disposal = confirmedData.type === 'disposal'
     const response = await fetch(`${apiUrl.replace(/\/$/, '')}/booking-requests`, {
       method: 'POST',
       headers: { 'content-type': 'application/json', 'idempotency-key': `elia:${payload.token}` },
       body: JSON.stringify({
-        type: disposal ? 'disposal' : 'ride', source: 'elia', pickupAddress: payload.departure,
-        ...(disposal ? { disposalMinutes: Math.max(15, Math.round((payload.hours ?? 1) * 60)) } : { dropoffAddress: payload.destination }),
-        pickupAt: parisLocalToIso(payload.date, payload.time),
-        passengers: Math.max(1, Number.parseInt(payload.passengers ?? '1', 10) || 1),
-        luggage: payload.options?.some(option => /bagage/i.test(option)) ? 1 : 0,
-        options: { selected: payload.options ?? [], payment: payload.payment },
-        customer: { name: payload.name, phone: payload.phone, email: payload.email },
+        type: disposal ? 'disposal' : 'ride', source: 'elia', pickupAddress: confirmedData.departure,
+        ...(disposal ? { disposalMinutes: Math.max(15, Math.round((confirmedData.hours ?? 1) * 60)) } : { dropoffAddress: confirmedData.destination }),
+        pickupAt: parisLocalToIso(confirmedData.date!, confirmedData.time!),
+        passengers: Math.max(1, Number.parseInt(confirmedData.passengers ?? '1', 10) || 1),
+        luggage: confirmedData.options?.some(option => /bagage/i.test(option)) ? 1 : 0,
+        options: { selected: confirmedData.options ?? [], payment: confirmedData.payment },
+        customer: { name: confirmedData.name, phone: confirmedData.phone, email: confirmedData.email },
       }),
       signal: AbortSignal.timeout(12_000),
     })
     const result = await response.json() as { message?: string; reference?: string; priceEur?: number }
     if (!response.ok) {
-      return NextResponse.json({ error: result.message ?? 'Demande non transmise' }, { status: response.status })
+      return NextResponse.json({ error: 'La demande n’a pas pu être transmise.' }, { status: response.status })
     }
-    return NextResponse.json(result, { status: 201 })
-  } catch (error) {
-    Sentry.captureException(error)
+    return NextResponse.json({ reference: result.reference, priceEur: result.priceEur }, { status: 201 })
+  } catch {
+    Sentry.captureException(new Error('Devis submission failed'))
     return NextResponse.json({ error: 'Une erreur est survenue. Appelez le 07 83 69 92 29.' }, { status: 500 })
   }
 }
