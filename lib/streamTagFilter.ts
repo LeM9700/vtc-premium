@@ -1,39 +1,40 @@
-const TAG_START = '<COLLECTED>'
+const TAGS = ['STATE', 'QUICK_REPLIES', 'COLLECTED'] as const
+function visiblePrefix(fullText: string): string {
+  let visible = ''
+  let cursor = 0
+  while (cursor < fullText.length) {
+    const openingPattern = /<\s*(STATE|QUICK_REPLIES|COLLECTED)\s*>/gi
+    openingPattern.lastIndex = cursor
+    const next = openingPattern.exec(fullText)
+    if (!next) break
+    visible += fullText.slice(cursor, next.index)
+    const closingPattern = new RegExp(`<\\/\\s*${next[1]}\\s*>`, 'gi')
+    closingPattern.lastIndex = openingPattern.lastIndex
+    const closing = closingPattern.exec(fullText)
+    if (!closing) return visible
+    cursor = closing.index + closing[0].length
+  }
+  const remainder = fullText.slice(cursor)
+  const partialIndex = remainder.lastIndexOf('<')
+  if (partialIndex === -1) return visible + remainder
+  const suffix = remainder.slice(partialIndex)
+  const normalizedSuffix = suffix.replace(/\s/g, '').toUpperCase()
+  return TAGS.some(tag => `<${tag}>`.startsWith(normalizedSuffix))
+    ? visible + remainder.slice(0, partialIndex)
+    : visible + remainder
+}
 
 /**
- * Filtre de streaming : ne laisse jamais passer le bloc `<COLLECTED>…` (ni
- * un préfixe partiel comme `<COLL`) vers le client. Élia termine toujours sa
- * réponse par ce bloc de données structurées — il ne doit jamais s'afficher.
- *
- * Appeler avec le texte accumulé complet à chaque delta ; retourne la portion
- * nouvellement sûre à envoyer (peut être vide tant que le tag n'est pas exclu).
+ * Filtre un snapshot cumulatif et ne rend que le nouveau texte sûr. Les trois
+ * balises restent retenues même si elles arrivent caractère par caractère.
  */
 export function createTagFilter() {
-  let sentLength = 0
-
+  let sentVisibleLength = 0
   return function filter(fullTextSoFar: string): string {
-    const tagIndex = fullTextSoFar.indexOf(TAG_START)
-
-    if (tagIndex !== -1) {
-      const safe = fullTextSoFar.slice(sentLength, tagIndex)
-      sentLength = tagIndex
-      return safe
-    }
-
-    // Pas de tag complet trouvé — vérifie si la fin du texte pourrait être
-    // le début du tag en cours de formation, et la retient dans ce cas.
-    const maxOverlap = Math.min(TAG_START.length - 1, fullTextSoFar.length)
-    for (let overlap = maxOverlap; overlap > 0; overlap--) {
-      if (fullTextSoFar.slice(-overlap) === TAG_START.slice(0, overlap)) {
-        const boundary = fullTextSoFar.length - overlap
-        const safe = fullTextSoFar.slice(sentLength, boundary)
-        sentLength = boundary
-        return safe
-      }
-    }
-
-    const safe = fullTextSoFar.slice(sentLength)
-    sentLength = fullTextSoFar.length
-    return safe
+    const visible = visiblePrefix(fullTextSoFar)
+    if (visible.length <= sentVisibleLength) return ''
+    const chunk = visible.slice(sentVisibleLength)
+    sentVisibleLength = visible.length
+    return chunk
   }
 }

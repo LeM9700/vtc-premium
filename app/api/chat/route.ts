@@ -6,32 +6,17 @@ import { checkRateLimit, getClientIp } from '@/lib/rateLimit'
 import { issueDevisToken } from '@/lib/devisToken'
 import { createSSEStream } from '@/lib/sse'
 import { createTagFilter } from '@/lib/streamTagFilter'
+import { parseAiResponse, validateChatMessages } from '@/lib/eliaValidation'
+import { detectSensitiveData, SENSITIVE_DATA_REPLY } from '@/lib/sensitiveData'
+import { issueConsentProof, issueConversationToken, verifyConsentProof, verifyConversationToken } from '@/lib/eliaTokens'
 
 const client = new Anthropic()
 
-const MAX_MESSAGES_PER_WINDOW = 25
-const WINDOW_MS = 10 * 60 * 1000
+const MAX_BURST_MESSAGES = 8
+const BURST_WINDOW_MS = 10 * 1000
 const ANTHROPIC_TIMEOUT_MS = 12_000
-const MAX_BODY_BYTES = 262_144 // 256 Ko — largement suffisant pour une conversation Élia
-const MAX_MESSAGES = 50
-const MAX_MESSAGE_LENGTH = 1000
-
-interface ChatMessage {
-  role:    'user' | 'assistant'
-  content: string
-}
-
-function isValidMessages(value: unknown): value is ChatMessage[] {
-  if (!Array.isArray(value) || value.length === 0 || value.length > MAX_MESSAGES) return false
-  return value.every((m): m is ChatMessage =>
-    typeof m === 'object' && m !== null &&
-    (m as { role?: unknown }).role !== undefined &&
-    ((m as { role: unknown }).role === 'user' || (m as { role: unknown }).role === 'assistant') &&
-    typeof (m as { content?: unknown }).content === 'string' &&
-    (m as { content: string }).content.length > 0 &&
-    (m as { content: string }).content.length <= MAX_MESSAGE_LENGTH
-  )
-}
+const MAX_BODY_BYTES = 64 * 1024
+const MIN_CONSENT_AGE_FOR_DEVIS_MS = 750
 
 const OFF_TOPIC_PATTERNS = [
   /météo|temps qu'il fait|température extérieure/i,
@@ -48,8 +33,6 @@ const OFF_TOPIC_PATTERNS = [
 const OFF_TOPIC_REPLY =
   "Je suis uniquement disponible pour vous aider à réserver votre trajet. Comment puis-je vous aider ?"
 
-const COLLECTED_TAG = /<COLLECTED>[\s\S]*?<\/COLLECTED>/
-
 /**
  * Réponse en streaming SSE : chaque frame est `{ type: 'delta', text }` ou
  * `{ type: 'done', devisToken? }` / `{ type: 'error' }`. Le bloc <COLLECTED>
@@ -57,8 +40,11 @@ const COLLECTED_TAG = /<COLLECTED>[\s\S]*?<\/COLLECTED>/
  */
 export async function POST(req: NextRequest) {
   const ip = getClientIp(req)
-  if (!checkRateLimit(`chat:${ip}`, MAX_MESSAGES_PER_WINDOW, WINDOW_MS)) {
-    return NextResponse.json({ error: 'Trop de requêtes. Réessayez dans quelques minutes.' }, { status: 429 })
+  if (!checkRateLimit(`chat:${ip}`, MAX_BURST_MESSAGES, BURST_WINDOW_MS)) {
+    return NextResponse.json(
+      { error: 'Trop de messages rapprochés. Réessayez dans quelques secondes.' },
+      { status: 429, headers: { 'Retry-After': String(Math.ceil(BURST_WINDOW_MS / 1000)) } },
+    )
   }
 
   const contentLength = Number(req.headers.get('content-length') ?? '0')
@@ -66,16 +52,40 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Requête trop volumineuse' }, { status: 413 })
   }
 
-  let body: { messages?: unknown; contextKey?: unknown }
+  let body: { messages?: unknown; contextKey?: unknown; historyToken?: unknown; consentProof?: unknown }
   try {
-    body = await req.json()
+    const rawBody = await req.text()
+    if (new TextEncoder().encode(rawBody).byteLength > MAX_BODY_BYTES) {
+      return NextResponse.json({ error: 'Requête trop volumineuse' }, { status: 413 })
+    }
+    body = JSON.parse(rawBody) as typeof body
   } catch {
     return NextResponse.json({ error: 'Requête invalide' }, { status: 400 })
   }
 
-  const { messages, contextKey } = body
-  if (!isValidMessages(messages)) {
+  const validation = validateChatMessages(body.messages)
+  if (!validation.ok) {
+    if (validation.reason === 'user_limit') {
+      return NextResponse.json({ error: 'Limite de messages atteinte.' }, { status: 429 })
+    }
     return NextResponse.json({ error: 'Requête invalide' }, { status: 400 })
+  }
+  const { messages } = validation
+  const { contextKey } = body
+  const secret = process.env.DEVIS_SECRET
+  const consent = verifyConsentProof(typeof body.consentProof === 'string' ? body.consentProof : undefined, secret)
+  if (!consent) return NextResponse.json({ error: 'Consentement requis' }, { status: 403 })
+
+  const previousHistory = messages.slice(0, -1)
+  const firstTurn = previousHistory.length === 0 && messages.length === 1 && messages[0].role === 'user'
+  const hasValidContinuity = typeof body.historyToken === 'string' &&
+    verifyConversationToken(body.historyToken, previousHistory, secret)
+  if (!firstTurn && !hasValidContinuity) {
+    return NextResponse.json({ error: 'Historique non authentifié' }, { status: 403 })
+  }
+
+  if (messages.some(message => detectSensitiveData(message.content))) {
+    return NextResponse.json({ error: SENSITIVE_DATA_REPLY }, { status: 400 })
   }
 
   const lastUserMsg = [...messages].reverse().find(m => m.role === 'user')
@@ -84,7 +94,11 @@ export async function POST(req: NextRequest) {
   if (isOffTopic) {
     return createSSEStream(async (send) => {
       send({ type: 'delta', text: OFF_TOPIC_REPLY })
-      send({ type: 'done' })
+      send({
+        type: 'done', collectedState: {}, quickReplies: [], readyForConfirmation: false, preserveState: true,
+        historyToken: issueConversationToken([...messages, { role: 'assistant', content: OFF_TOPIC_REPLY }], secret),
+        consentProof: issueConsentProof(secret),
+      })
     })
   }
 
@@ -111,27 +125,30 @@ export async function POST(req: NextRequest) {
         if (safeChunk) send({ type: 'delta', text: safeChunk })
       })
 
-      const finalMessage = await stream.finalMessage()
-      console.log('[chat] tokens:', finalMessage.usage)
-
-      // Le client ne reçoit jamais le bloc <COLLECTED> brut (filtré côté
-      // serveur) : on lui transmet directement les données déjà parsées.
-      const tagMatch = fullText.match(COLLECTED_TAG)
-      let collected: unknown
-      if (tagMatch) {
-        try {
-          collected = JSON.parse(tagMatch[0].replace(/^<COLLECTED>|<\/COLLECTED>$/g, ''))
-        } catch {
-          collected = undefined
-        }
+      await stream.finalMessage()
+      const metadata = parseAiResponse(fullText)
+      if (!metadata.visibleText) throw new Error('empty_assistant_response')
+      const remainingConsentDelay = MIN_CONSENT_AGE_FOR_DEVIS_MS - (Date.now() - consent.issuedAt)
+      if (metadata.readyForConfirmation && remainingConsentDelay > 0) {
+        await new Promise(resolve => setTimeout(resolve, remainingConsentDelay))
       }
+      const devisToken = metadata.readyForConfirmation ? issueDevisToken(metadata.collectedState) : undefined
+      const historyToken = issueConversationToken(
+        [...messages, { role: 'assistant', content: metadata.visibleText }], secret,
+      )
+      send({
+        type: 'done',
+        collectedState: metadata.collectedState,
+        quickReplies: metadata.quickReplies,
+        readyForConfirmation: metadata.readyForConfirmation,
+        historyToken,
+        consentProof: issueConsentProof(secret),
+        ...(devisToken ? { devisToken } : {}),
+      })
 
-      const devisToken = collected ? issueDevisToken() : undefined
-      send({ type: 'done', devisToken, collected })
-
-    } catch (err) {
-      console.error('[chat]', err)
-      Sentry.captureException(err)
+    } catch {
+      console.error('[chat] Anthropic request failed')
+      Sentry.captureException(new Error('Anthropic chat request failed'))
       send({ type: 'error' })
     }
   })

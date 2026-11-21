@@ -29,3 +29,21 @@ body {
   outline: 2px solid #C9A96E;
   outline-offset: 3px;
 }
+
+.elia-typing {
+  animation: eliaTyping 1s ease-in-out infinite;
+}
+
+@keyframes eliaTyping {
+  50% { opacity: 0.25; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .elia-typing {
+    animation: none;
+  }
+
+  * {
+    scroll-behavior: auto !important;
+  }
+}
